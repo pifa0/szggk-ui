@@ -5,8 +5,8 @@
   "type": "module",
   "homepage": "https://pifa0.github.io/szggk-ui",
   "scripts": {
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d build",
+    "build": "vite build",
+    "deploy": "gh-pages -d dist",
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
