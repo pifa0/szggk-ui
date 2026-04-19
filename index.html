@@ -1,19 +1,32 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/szggk-ui/assets/favicon-Bov6Fi5h.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="СЗГГК Геокомплекс — Северо-Западная Геолого-Геофизическая Компания. Геологические и геофизические работы по всей России и за рубежом." />
-    <title>СЗГГК Геокомплекс — Геологическая компания</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Russo+One&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script type="module" crossorigin src="/szggk-ui/assets/index-BqyvbIgl.js"></script>
-    <link rel="stylesheet" crossorigin href="/szggk-ui/assets/index-Iy792IfZ.css">
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/szggk-ui/favicon.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>СЗГГК Геокомплекс</title>
+  <!-- Скрипт для восстановления пути после 404 -->
+  <script>
+    (function() {
+      // Проверяем, есть ли сохраненный путь для восстановления
+      var savedPath = sessionStorage.getItem('redirectPath');
+      if (savedPath) {
+        sessionStorage.removeItem('redirectPath');
+        // Сохраняем для использования в React
+        window.__REDIRECT_PATH__ = savedPath;
+      }
+
+      // Очищаем URL от параметров Google Translate
+      if (window.location.hash && window.location.hash.includes('googtrans')) {
+        var cleanUrl = window.location.pathname + window.location.search;
+        window.history.replaceState(null, '', cleanUrl);
+      }
+    })();
+  </script>
+  <script type="module" crossorigin src="/szggk-ui/assets/index-Dm2DpCR0.js"></script>
+  <link rel="stylesheet" crossorigin href="/szggk-ui/assets/index-Iy792IfZ.css">
+</head>
+<body>
+<div id="root"></div>
+</body>
 </html>
