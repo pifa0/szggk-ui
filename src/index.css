@@ -296,3 +296,38 @@ body {
 .goog-te-balloon-frame {
   display: none !important;
 }
+
+/* Блокировка плашки Google Translate - максимальная специфичность */
+.goog-te-banner-frame,
+.goog-te-banner-frame.skiptranslate,
+.goog-te-banner-frame:visible,
+iframe.goog-te-banner-frame {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  width: 0 !important;
+  top: -9999px !important;
+  left: -9999px !important;
+  position: absolute !important;
+  pointer-events: none !important;
+}
+
+/* Убираем отступ у body */
+body {
+  top: 0px !important;
+  position: static !important;
+  margin-top: 0px !important;
+}
+
+/* Блокируем любой сдвиг контента */
+html {
+  margin-top: 0px !important;
+}
+
+/* Скрываем все элементы перевода Google */
+.goog-te-gadget,
+.goog-te-gadget-simple,
+.goog-te-gadget-icon {
+  display: none !important;
+}

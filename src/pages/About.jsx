@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle2, ArrowRight, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { imagePath } from '../utils/paths'
 
 const values = [
   { title: 'Точность и достоверность', desc: 'Все результаты работ проходят многоуровневую проверку качества перед сдачей заказчику.' },
@@ -21,20 +22,20 @@ const timeline = [
 
 // Массив сертификатов (замените на свои реальные изображения)
 const certificates = [
-  { id: 1, src: 'public/images/certificate/certificate1.png', alt: 'Сертификат 1' },
-  { id: 2, src: 'public/images/certificate/certificate2.png', alt: 'Сертификат 2' },
-  { id: 3, src: 'public/images/certificate/certificate3.png', alt: 'Сертификат 3' },
-  { id: 4, src: 'public/images/certificate/certificate4.png', alt: 'Сертификат 4' },
-  { id: 5, src: 'public/images/certificate/certificate5.png', alt: 'Сертификат 5' },
-  { id: 6, src: 'public/images/certificate/certificate6.png', alt: 'Сертификат 6' },
-  { id: 7, src: 'public/images/certificate/certificate7.png', alt: 'Сертификат 7' },
-  { id: 8, src: 'public/images/certificate/certificate8.png', alt: 'Сертификат 8' },
-  { id: 9, src: 'public/images/certificate/certificate9.png', alt: 'Сертификат 9' },
-  { id: 10, src: 'public/images/certificate/certificate10.png', alt: 'Сертификат 10' },
-  { id: 11, src: 'public/images/certificate/certificate11.png', alt: 'Сертификат 11' },
-  { id: 12, src: 'public/images/certificate/certificate12.png', alt: 'Сертификат 12' },
-  { id: 13, src: 'public/images/certificate/certificate13.png', alt: 'Сертификат 13' },
-  { id: 14, src: 'public/images/certificate/certificate14.png', alt: 'Сертификат 14' },
+  { id: 1, src: imagePath('images/certificate/certificate1.png'), alt: 'Сертификат 1' },
+  { id: 2, src: imagePath('images/certificate/certificate2.png'), alt: 'Сертификат 2' },
+  { id: 3, src: imagePath('images/certificate/certificate3.png'), alt: 'Сертификат 3' },
+  { id: 4, src: imagePath('images/certificate/certificate4.png'), alt: 'Сертификат 4' },
+  { id: 5, src: imagePath('images/certificate/certificate5.png'), alt: 'Сертификат 5' },
+  { id: 6, src: imagePath('images/certificate/certificate6.png'), alt: 'Сертификат 6' },
+  { id: 7, src: imagePath('images/certificate/certificate7.png'), alt: 'Сертификат 7' },
+  { id: 8, src: imagePath('images/certificate/certificate8.png'), alt: 'Сертификат 8' },
+  { id: 9, src: imagePath('images/certificate/certificate9.png'), alt: 'Сертификат 9' },
+  { id: 10, src: imagePath('images/certificate/certificate10.png'), alt: 'Сертификат 10' },
+  { id: 11, src: imagePath('images/certificate/certificate11.png'), alt: 'Сертификат 11' },
+  { id: 12, src: imagePath('images/certificate/certificate12.png'), alt: 'Сертификат 12' },
+  { id: 13, src: imagePath('images/certificate/certificate13.png'), alt: 'Сертификат 13' },
+  { id: 14, src: imagePath('images/certificate/certificate14.png'), alt: 'Сертификат 14' },
 ];
 
 // Компонент карусели сертификатов
@@ -306,7 +307,7 @@ export default function About() {
               alignItems: 'center',
             }}>
               <img
-                src="public/images/about/company-photo.jpg"
+                src={imagePath('images/about/company-photo.jpg')}
                 alt="Геолого-геофизические работы"
                 style={{
                   width: '100%',

@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, MapPin, TrendingUp, Award, Globe } from 'lucide-react'
+import { imagePath } from '../utils/paths'
 
 function StrataCanvas() {
   const canvasRef = useRef(null)
@@ -70,6 +71,167 @@ const advantages = [
   { icon: <Globe size={22} />, title: 'Международное сотрудничество', desc: 'Проекты в Африке, Азии и Латинской Америке.' },
   { icon: <MapPin size={22} />, title: 'Комплексный подход', desc: 'Оптимизация по эффективности, стоимости и срокам — полный цикл от планирования до отчёта.' },
 ]
+
+// Список партнёров
+const partners = [
+  { name: 'Краома', logo: imagePath('images/company/field2.jpg') },
+  { name: 'РБК', logo: imagePath('images/company/field4.jpg') },
+  { name: 'ОЗГЕО', logo: imagePath('images/company/field5.jpg') },
+  { name: 'ВСЕГЕИ', logo: imagePath('images/company/img.png') },
+  { name: 'ВБК', logo: imagePath('images/company/project-2-medusa.png') },
+  { name: 'Норникель', logo: imagePath('images/company/Норникель.jpg') },
+  { name: 'Полиметалл', logo: imagePath('images/company/Полиметалл.webp') },
+  { name: 'Горный', logo: imagePath('images/company/Санкт-Петербургский_горный_университет.png') }
+]
+
+// Компонент карусели для партнёров
+// Компонент карусели для партнёров
+function PartnersCarousel() {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [isMobile, setIsMobile] = useState(false)
+  const touchStartX = useRef(0)
+  const touchEndX = useRef(0)
+  const autoPlayInterval = useRef(null)
+
+  // Определяем мобильное устройство
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth <= 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Автопрокрутка каждые 4 секунды (медленнее)
+  useEffect(() => {
+    if (isMobile) {
+      autoPlayInterval.current = setInterval(() => {
+        setCurrentIndex((prev) => (prev + 1) % partners.length)
+      }, 4000) // Увеличено с 3 до 4 секунд
+    }
+    return () => {
+      if (autoPlayInterval.current) clearInterval(autoPlayInterval.current)
+    }
+  }, [isMobile])
+
+  // Обработка свайпов
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX
+  }
+
+  const handleTouchEnd = (e) => {
+    touchEndX.current = e.changedTouches[0].clientX
+    const diff = touchStartX.current - touchEndX.current
+
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) {
+        setCurrentIndex((prev) => (prev + 1) % partners.length)
+      } else {
+        setCurrentIndex((prev) => (prev - 1 + partners.length) % partners.length)
+      }
+    }
+  }
+
+  // Для десктопа - показываем всех партнёров сеткой
+  if (!isMobile) {
+    return (
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))',
+        gap: '30px',
+        alignItems: 'center',
+      }}>
+        {partners.map((partner, idx) => (
+          <div key={idx} style={{
+            padding: '16px 12px',
+            background: 'rgba(255,255,255,0.02)',
+            borderRadius: 12,
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(212,160,23,0.05)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; e.currentTarget.style.transform = 'translateY(0)'; }}>
+            <img src={partner.logo} alt={partner.name} style={{ width: '100%', maxHeight: 50, objectFit: 'contain', opacity: 0.6, transition: 'opacity 0.2s' }} onMouseEnter={e => e.currentTarget.style.opacity = 1} onMouseLeave={e => e.currentTarget.style.opacity = 0.6} />
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  // Для мобильных - карусель со свайпами (логотип вверху, точки внизу)
+  return (
+    <div style={{ position: 'relative', maxWidth: '100%', margin: '0 auto' }}>
+      {/* Карусель с логотипом */}
+      <div
+        style={{
+          overflow: 'hidden',
+          touchAction: 'pan-y pinch-zoom',
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div
+          style={{
+            display: 'flex',
+            transition: 'transform 0.6s ease', // Более медленный переход (было 0.4s)
+            transform: `translateX(-${currentIndex * 100}%)`,
+          }}
+        >
+          {partners.map((partner, idx) => (
+            <div
+              key={idx}
+              style={{
+                minWidth: '100%',
+                padding: '24px 16px',
+                background: 'rgba(255,255,255,0.02)',
+                borderRadius: 12,
+                textAlign: 'center',
+                boxSizing: 'border-box',
+              }}
+            >
+              <img
+                src={partner.logo}
+                alt={partner.name}
+                style={{
+                  width: 'auto',
+                  maxWidth: '80%',
+                  maxHeight: '80px',
+                  objectFit: 'contain',
+                  margin: '0 auto',
+                  opacity: 0.8,
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Точки навигации внизу */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        gap: '10px',
+        marginTop: '20px',
+        marginBottom: '8px'
+      }}>
+        {partners.map((_, idx) => (
+          <button
+            key={idx}
+            onClick={() => setCurrentIndex(idx)}
+            style={{
+              width: idx === currentIndex ? '28px' : '8px',
+              height: '8px',
+              borderRadius: '4px',
+              border: 'none',
+              background: idx === currentIndex ? '#d4a017' : 'rgba(212,160,23,0.3)',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              padding: 0,
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export default function Home() {
   return (
@@ -174,7 +336,7 @@ export default function Home() {
       </section>
 
       {/* CTA */}
-      {/* Partners / Clients - grid version */}
+      {/* Partners / Clients - с каруселью для мобильных */}
       <section className="section" style={{ background: 'var(--bg-primary)' }}>
         <div className="container" style={{ textAlign: 'center' }}>
           <div style={{ maxWidth: 1000, margin: '0 auto', padding: '60px 40px', background: 'var(--bg-card)', border: '1px solid rgba(212,160,23,0.15)', borderRadius: 24, position: 'relative', overflow: 'hidden' }}>
@@ -184,34 +346,7 @@ export default function Home() {
             <h2 className="section-title" style={{ textAlign: 'center' }}>Ключевые партнёры</h2>
             <div className="accent-line" style={{ margin: '0 auto 50px' }} />
 
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))',
-              gap: '30px',
-              alignItems: 'center',
-            }}>
-              {[
-                { name: 'Краома', logo: 'public/images/company/field2.jpg' },
-                { name: 'РБК', logo: 'public/images/company/field4.jpg' },
-                { name: 'ОЗГЕО', logo: 'public/images/company/field5.jpg' },
-                { name: 'ВСЕГЕИ', logo: 'public/images/company/img.png' },
-                { name: 'ВБК', logo: 'public/images/company/project-2-medusa.png' },
-                { name: 'Норникель', logo: 'public/images/company/Норникель.jpg' },
-                { name: 'Полиметалл', logo: 'public/images/company/Полиметалл.webp' },
-                { name: 'Горный', logo: 'public/images/company/Санкт-Петербургский_горный_университет.png' }
-              ].map((partner, idx) => (
-                <div key={idx} style={{
-                  padding: '16px 12px',
-                  background: 'rgba(255,255,255,0.02)',
-                  borderRadius: 12,
-                  transition: 'all 0.2s ease',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(212,160,23,0.05)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; e.currentTarget.style.transform = 'translateY(0)'; }}>
-                  <img src={partner.logo} alt={partner.name} style={{ width: '100%', maxHeight: 50, objectFit: 'contain', opacity: 0.6, transition: 'opacity 0.2s' }} onMouseEnter={e => e.currentTarget.style.opacity = 1} onMouseLeave={e => e.currentTarget.style.opacity = 0.6} />
-                </div>
-              ))}
-            </div>
+            <PartnersCarousel />
           </div>
         </div>
       </section>

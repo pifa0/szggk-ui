@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { NavLink, Link } from 'react-router-dom'
 import { Menu, X, Phone } from 'lucide-react'
 import { applyTranslateLanguage, onTranslateReady } from '../googleTranslate'
+import { imagePath } from '../utils/paths'
 
 const navLinks = [
   { path: '/', label: 'Главная' },
@@ -35,13 +36,23 @@ export default function Navbar() {
     (code) => {
       setLang(code)
       localStorage.setItem('site-language', code)
-      // Try immediate widget control; if widget isn't ready, cookie will still be set.
-      if (tryApplyLanguage(code)) return
 
-      // Fallback that always works: reload after setting cookie (done in applyTranslateLanguage).
-      window.setTimeout(() => {
-        window.location.reload()
-      }, 150)
+      // Try immediate widget control
+      const success = tryApplyLanguage(code)
+
+      // На GitHub Pages иногда нужна перезагрузка
+      const isGitHubPages = window.location.hostname.includes('github.io')
+      if (!success && isGitHubPages) {
+        // Перезагружаем страницу после установки куки
+        setTimeout(() => {
+          window.location.reload()
+        }, 150)
+      } else if (!success) {
+        // Для локальной разработки
+        window.setTimeout(() => {
+          window.location.reload()
+        }, 150)
+      }
     },
     [tryApplyLanguage]
   )
@@ -52,14 +63,20 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', handler)
   }, [])
 
-  // Apply saved language as soon as the Google widget injects its combo (or on refresh).
+  // Apply saved language as soon as the Google widget injects its combo
   useEffect(() => {
     const stored = localStorage.getItem('site-language') || 'ru'
     setLang(stored)
-    const cancel = onTranslateReady(() => {
-      applyTranslateLanguage(stored)
-    })
-    return cancel
+
+    // Добавляем небольшую задержку для GitHub Pages
+    const timeoutId = setTimeout(() => {
+      const cancel = onTranslateReady(() => {
+        applyTranslateLanguage(stored)
+      })
+      return cancel
+    }, 500)
+
+    return () => clearTimeout(timeoutId)
   }, [])
 
   const selectStyle = {
@@ -78,7 +95,7 @@ export default function Navbar() {
     <nav style={{
       position: 'fixed',
       top: 0, left: 0, right: 0,
-      zIndex: 2147483647,
+      zIndex: 1000,
       transition: 'all 0.3s ease',
       background: scrolled
         ? 'rgba(245,246,250,0.97)'
@@ -98,7 +115,7 @@ export default function Navbar() {
             overflow: 'hidden',
             flexShrink: 0, border: 'none'
           }}>
-            <img src="public/favicon.svg" alt="СЗГГК Геокомплекс" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+            <img src={imagePath('favicon.svg')} alt="СЗГГК Геокомплекс" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           </div>
           <div>
             <div style={{ fontFamily: 'Russo One', fontSize: 16, color: '#0f172a', letterSpacing: 0.5 }}>ГЕОКОМПЛЕКС</div>
@@ -129,7 +146,7 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* Phone + language (language after phone) */}
+        {/* Phone + language */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }} className="nav-actions">
           <a href="tel:+79219732236" style={{
             display: 'flex', alignItems: 'center', gap: 8,

@@ -1,5 +1,194 @@
-import { Phone, Mail, MapPin, Clock, Send } from 'lucide-react'
+import { Phone, Mail, MapPin, Clock, Send, FileText, Download, ExternalLink } from 'lucide-react'
 import { useState } from 'react'
+import { imagePath } from '../utils/paths'
+
+// Данные нормативной документации
+const normativeDocs = [
+  {
+    id: 1,
+    year: '2025',
+    title: 'Сводная ведомость результатов проведения СОУТ',
+    description: 'Результаты специальной оценки условий труда за 2025 год',
+    pdfUrl: imagePath('/docs/svodnaya-vedomost-sout-2025.pdf'),
+    fileSize: '60.1 КБ'
+  },
+  {
+    id: 2,
+    year: '2019',
+    title: 'Перечень рекомендуемых мероприятий по улучшению условий труда',
+    description: 'Рекомендации по улучшению условий труда сотрудников',
+    pdfUrl: imagePath('/docs/meropriyatiya-usloviya-truda-2019.pdf'),
+    fileSize: '1.8 MB'
+  },
+  {
+    id: 3,
+    year: '2017',
+    title: 'Сводная ведомость результатов проведения СОУТ',
+    description: 'Результаты специальной оценки условий труда за 2017 год',
+    pdfUrl: imagePath('/docs/svodnaya-vedomost-sout-2017.pdf'),
+    fileSize: '2.1 MB'
+  },
+  {
+    id: 4,
+    year: '2017',
+    title: 'Перечень рекомендуемых мероприятий по улучшению условий труда',
+    description: 'План мероприятий по улучшению условий труда',
+    pdfUrl: imagePath('/docs/meropriyatiya-usloviya-truda-2017.pdf'),
+    fileSize: '1.6 MB'
+  }
+]
+
+// Компонент карточки документа
+function DocumentCard({ doc }) {
+  const [isHovered, setIsHovered] = useState(false)
+
+  const handleDownload = () => {
+    // Создаем ссылку для скачивания
+    const link = document.createElement('a')
+    link.href = doc.pdfUrl
+    link.download = `${doc.title}.pdf`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  const handleView = () => {
+    // Открываем PDF в новой вкладке
+    window.open(doc.pdfUrl, '_blank')
+  }
+
+  return (
+    <div
+      style={{
+        background: 'var(--bg-card)',
+        border: `1px solid ${isHovered ? 'rgba(212,160,23,0.3)' : 'var(--border)'}`,
+        borderRadius: 16,
+        padding: '24px',
+        transition: 'all 0.3s ease',
+        cursor: 'pointer',
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, marginBottom: 16 }}>
+        <div style={{
+          width: 48,
+          height: 48,
+          borderRadius: 12,
+          background: 'rgba(212,160,23,0.1)',
+          border: '1px solid rgba(212,160,23,0.2)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}>
+          <FileText size={24} color="#d4a017" />
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+            <span style={{
+              fontSize: 11,
+              fontWeight: 600,
+              color: '#d4a017',
+              background: 'rgba(212,160,23,0.1)',
+              padding: '2px 8px',
+              borderRadius: 20,
+            }}>
+              {doc.year}
+            </span>
+            <span style={{
+              fontSize: 11,
+              color: 'var(--text-muted)',
+            }}>
+              PDF • {doc.fileSize}
+            </span>
+          </div>
+          <h3 style={{
+            fontSize: 16,
+            fontWeight: 700,
+            color: 'var(--text-primary)',
+            marginBottom: 6,
+            lineHeight: 1.4,
+          }}>
+            {doc.title}
+          </h3>
+          <p style={{
+            fontSize: 13,
+            color: 'var(--text-secondary)',
+            lineHeight: 1.5,
+          }}>
+            {doc.description}
+          </p>
+        </div>
+      </div>
+
+      <div style={{
+        display: 'flex',
+        gap: 12,
+        marginTop: 16,
+        paddingTop: 16,
+        borderTop: '1px solid var(--border)',
+      }}>
+        <button
+          onClick={handleView}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            background: 'transparent',
+            border: '1px solid rgba(212,160,23,0.3)',
+            borderRadius: 8,
+            fontSize: 13,
+            fontWeight: 500,
+            color: '#d4a017',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = 'rgba(212,160,23,0.1)'
+            e.currentTarget.style.transform = 'translateY(-1px)'
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = 'transparent'
+            e.currentTarget.style.transform = 'translateY(0)'
+          }}
+        >
+          <ExternalLink size={14} />
+          Открыть
+        </button>
+        <button
+          onClick={handleDownload}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px',
+            background: 'linear-gradient(135deg, #f5d060, #e0b430)',
+            border: 'none',
+            borderRadius: 8,
+            fontSize: 13,
+            fontWeight: 500,
+            color: '#2c2c2c',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = 'linear-gradient(135deg, #e8c040, #d4a017)'
+            e.currentTarget.style.transform = 'translateY(-1px)'
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = 'linear-gradient(135deg, #f5d060, #e0b430)'
+            e.currentTarget.style.transform = 'translateY(0)'
+          }}
+        >
+          <Download size={14} />
+          Скачать PDF
+        </button>
+      </div>
+    </div>
+  )
+}
 
 export default function Contacts() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' })
@@ -7,7 +196,6 @@ export default function Contacts() {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    // Form submission would go here
     setSent(true)
     setTimeout(() => setSent(false), 4000)
     setForm({ name: '', email: '', phone: '', message: '' })
@@ -34,11 +222,11 @@ export default function Contacts() {
       </section>
 
       {/* Main content */}
-      <section className="section" style={{ background: 'var(--bg-primary)' }}>
+      <section className="section" style={{ background: 'var(--bg-primary)', padding: '60px 0' }}>
         <div className="container">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 20, paddingTop: '-100px', marginTop: '-74px', }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 30 }}>
             <div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 50 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 40 }}>
                 {[
                   {
                     icon: <Phone size={20} />,
@@ -92,12 +280,12 @@ export default function Contacts() {
                     <div>
                       <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 2 }}>{c.label}</div>
                       {c.href ? (
-                        <a href={c.href} style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', textDecoration: 'none' }}
+                        <a href={c.href} style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', textDecoration: 'none', wordBreak: 'break-word' }}
                           onMouseEnter={e => e.currentTarget.style.color = c.color}
                           onMouseLeave={e => e.currentTarget.style.color = 'var(--text-primary)'}
                         >{c.value}</a>
                       ) : (
-                        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>{c.value}</div>
+                        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', wordBreak: 'break-word' }}>{c.value}</div>
                       )}
                     </div>
                   </div>
@@ -122,7 +310,7 @@ export default function Contacts() {
                 ].map(([key, val]) => (
                   <div key={key} style={{ marginBottom: 12 }}>
                     <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 2 }}>{key}</div>
-                    <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{val}</div>
+                    <div style={{ fontSize: 13, color: 'var(--text-secondary)', wordBreak: 'break-word' }}>{val}</div>
                   </div>
                 ))}
               </div>
@@ -131,32 +319,27 @@ export default function Contacts() {
         </div>
       </section>
 
-      {/* FAQ */}
-      <section className="section" style={{ background: 'var(--bg-secondary)' }}>
+      {/* Нормативная документация вместо FAQ */}
+      <section className="section" style={{ background: 'var(--bg-secondary)', padding: '60px 0' }}>
         <div className="container">
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <div className="section-label">Частые вопросы</div>
-            <h2 className="section-title">FAQ</h2>
+            <div className="section-label">Документы</div>
+            <h2 className="section-title">Нормативная документация</h2>
             <div className="accent-line" style={{ margin: '14px auto 0' }} />
+            <p className="section-subtitle" style={{ marginTop: 16, maxWidth: 600, margin: '16px auto 0' }}>
+              Официальные документы и отчёты о специальной оценке условий труда
+            </p>
           </div>
-          <div style={{ maxWidth: 760, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {[
-              { q: 'В каких регионах вы работаете?', a: 'Мы работаем по всей территории России (включая Арктику, Дальний Восток, Сибирь) и на международных объектах — в Африке, Азии, Латинской Америке.' },
-              { q: 'Как быстро можно получить коммерческое предложение?', a: 'После получения технического задания и описания объекта мы подготовим предварительное коммерческое предложение в течение 3–5 рабочих дней.' },
-              { q: 'Какие требования к итоговой отчётности?', a: 'Отчёты оформляются в соответствии с требованиями ГКЗ РФ. При международных проектах — согласно стандартам JORC, NI 43-101 или по требованиям заказчика.' },
-              { q: 'Работаете ли вы в труднодоступных районах?', a: 'Да. Мы имеем значительный опыт работы в условиях многолетней мерзлоты, в высокогорье, в тропиках, в условиях бездорожья.' },
-            ].map((faq, i) => (
-              <div key={i} style={{
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border)',
-                borderRadius: 12,
-                padding: '20px 24px',
-              }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>
-                  {faq.q}
-                </div>
-                <div style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.65 }}>{faq.a}</div>
-              </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 380px), 1fr))',
+            gap: 24,
+            maxWidth: 1000,
+            margin: '0 auto',
+          }}>
+            {normativeDocs.map((doc) => (
+              <DocumentCard key={doc.id} doc={doc} />
             ))}
           </div>
         </div>

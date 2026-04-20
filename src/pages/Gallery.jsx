@@ -1,52 +1,131 @@
 import { useState } from 'react'
 import { X, ZoomIn } from 'lucide-react'
+import { imagePath } from '../utils/paths'
 
-const categories = ['Все', 'Полевые работы', 'Карты и данные', 'Оборудование', 'Конференции']
+const categories = ['Все', 'Республика Карелия, 2022', 'Республика Коми, 2023', 'Норильск, 2023', 'Мадагаскар, 2023', 'Сурья Казанская, 2024', 'Чукотка, 2024', 'Хабаровский край, 2024', 'ЦАР, 2025', 'Забайкальский край, 2026', 'Конференции']
+
+// Создаём фото группой одной строкой
+const createPhotos = (group, srcList) => srcList.map(src => ({ src, group }))
 
 const photos = [
-  // Полевые работы
-  { src: '/images/field-2021.jpg', title: 'Полевая экспедиция 2021', cat: 'Полевые работы', desc: 'Геофизические работы в полевых условиях, 2021 г.' },
-  { src: '/images/field-2019.jpg', title: 'Экспедиция 2019', cat: 'Полевые работы', desc: 'Полевые геологические работы, 2019 г.' },
-  { src: '/images/saha.jpg', title: 'Якутия (Саха)', cat: 'Полевые работы', desc: 'Геофизические работы в Республике Саха (Якутия).' },
-  { src: '/images/field6.jpg', title: 'Полевые измерения', cat: 'Полевые работы', desc: 'Проведение полевых геофизических измерений.' },
-  { src: '/images/field7.jpg', title: 'Работы на объекте', cat: 'Полевые работы', desc: 'Геофизические наблюдения в полевых условиях.' },
-  { src: '/images/field8.jpg', title: 'Полевой лагерь', cat: 'Полевые работы', desc: 'Организация базового лагеря экспедиции.' },
-  { src: '/images/field9.jpg', title: 'Геофизическая съёмка', cat: 'Полевые работы', desc: 'Проведение геофизической съёмки на объекте.' },
-  { src: '/images/field10.jpg', title: 'Экспедиция', cat: 'Полевые работы', desc: 'Полевые геофизические работы.' },
-  { src: '/images/field11.jpg', title: 'Геолого-геофизические работы', cat: 'Полевые работы', desc: 'Комплексные полевые геолого-геофизические работы.' },
-  { src: '/images/project-field1.jpg', title: 'Полевая база', cat: 'Полевые работы', desc: 'Полевая база экспедиции.' },
-  { src: '/images/field-deep1.jpg', title: 'Глубинные исследования', cat: 'Полевые работы', desc: 'Геофизические исследования.' },
-  { src: '/images/field-deep2.jpg', title: 'Измерительные работы', cat: 'Полевые работы', desc: 'Проведение полевых измерений.' },
-  { src: '/images/photo2.jpg', title: 'Экспедиция', cat: 'Полевые работы', desc: 'Полевые геологические работы.' },
-  { src: '/images/photo3.jpg', title: 'Полевые работы', cat: 'Полевые работы', desc: 'Геологические и геофизические работы на объекте.' },
-  { src: '/images/team-photo.jpg', title: 'Команда в поле', cat: 'Полевые работы', desc: 'Коллектив СЗГГК «Геокомплекс» в полевых условиях.' },
-  // Карты и данные
-  { src: '/images/carta-map.jpg', title: 'Карта объекта (Колумбия)', cat: 'Карты и данные', desc: 'Геологическая карта объекта «CARTA_2 Alexander Co.» в Колумбии.' },
-  { src: '/images/carta-map2.jpg', title: 'Карта работ в Колумбии', cat: 'Карты и данные', desc: 'Картографические материалы по проекту в Колумбии.' },
-  { src: '/images/project-img1.png', title: 'Геофизические данные', cat: 'Карты и данные', desc: 'Результаты геофизической интерпретации.' },
-  { src: '/images/project-img2.png', title: 'Обработка данных', cat: 'Карты и данные', desc: 'Камеральная обработка геофизических данных.' },
-  { src: '/images/project-img3.png', title: 'Профиль', cat: 'Карты и данные', desc: 'Геофизический разрез.' },
-  { src: '/images/project-img4.png', title: 'Интерпретация', cat: 'Карты и данные', desc: 'Интерпретационные материалы.' },
-  { src: '/images/project-img5.png', title: 'Геохимические данные', cat: 'Карты и данные', desc: 'Геохимические данные по объекту.' },
-  { src: '/images/project-img6.png', title: 'Аномалии', cat: 'Карты и данные', desc: 'Геофизические аномалии.' },
-  { src: '/images/project-img7.png', title: 'Карта аномалий', cat: 'Карты и данные', desc: 'Карта выявленных аномалий.' },
-  // Оборудование
-  { src: '/images/delta-pro.jpg', title: 'DELTA Professional', cat: 'Оборудование', desc: 'Портативный рентгенофлуоресцентный анализатор DELTA Professional.' },
-  { src: '/images/rs-125.jpg', title: 'RS-125', cat: 'Оборудование', desc: 'Портативный спектрометр-радиометр RS-125.' },
-  { src: '/images/field1.jpg', title: 'СКАТ (электроразведка)', cat: 'Оборудование', desc: 'Генераторная установка электроразведки СКАТ.' },
-  { src: '/images/field3.jpg', title: 'Полевое оборудование', cat: 'Оборудование', desc: 'Подготовка оборудования к полевым работам.' },
-  // Конференции
-  { src: '/images/workshop.jpg', title: 'Workshop de Géophysique', cat: 'Конференции', desc: 'Международный семинар по геофизике. Специалисты компании принимают активное участие в международных конференциях.' },
-  { src: '/images/msk2018.jpg', title: 'Конференция, Москва 2018', cat: 'Конференции', desc: 'Участие в конференции, Москва, 2018 г.' },
-  { src: '/images/attestation.jpg', title: 'Аттестация специалистов', cat: 'Конференции', desc: 'Аттестация и сертификация специалистов компании.' },
-  { src: '/images/photo1.jpg', title: 'Совещание', cat: 'Конференции', desc: 'Рабочее совещание.' },
+  ...createPhotos('Республика Карелия, 2022', [
+    imagePath('images/gallery/Karelia 2022/836b6d97-00e7-4be3-830c-9c4d1735ac75.jpeg'),
+    imagePath('images/gallery/Karelia 2022/9942e1c4-df6e-442f-b05a-59a1d067e60b.jpeg'),
+    imagePath('images/gallery/Karelia 2022/65642e21-ce83-4625-b7ae-6b02c96b9655.jpeg'),
+    imagePath('images/gallery/Karelia 2022/c5bebab8-8121-44ba-8ff6-ceef6dd8f3d2.jpeg'),
+    imagePath('images/gallery/Karelia 2022/IMG_3999.heic'),
+    imagePath('images/gallery/Karelia 2022/IMG_4086.heic'),
+    imagePath('images/gallery/Karelia 2022/IMG_4092.heic'),
+    imagePath('images/gallery/Karelia 2022/IMG_4152.png'),
+  ]),
+  ...createPhotos('Республика Коми, 2023', [
+    imagePath('images/gallery/Komi 2023/IMG_6126.heic'),
+    imagePath('images/gallery/Komi 2023/IMG_7954.heic'),
+    imagePath('images/gallery/Komi 2023/IMG_7805.heic'),
+    imagePath('images/gallery/Komi 2023/IMG_7786.heic'),
+    imagePath('images/gallery/Komi 2023/IMG_7775.heic'),
+    imagePath('images/gallery/Komi 2023/IMG_7651.heic'),
+    imagePath('images/gallery/Komi 2023/IMG_7617.heic'),
+    imagePath('images/gallery/Komi 2023/IMG_7569.heic'),
+    imagePath('images/gallery/Komi 2023/IMG_6169.heic'),
+    imagePath('images/gallery/Komi 2023/IMG_7966.heic'),
+  ]),
+  ...createPhotos('Норильск, 2023', [
+    imagePath('images/gallery/Norilsk 2023/IMG_8558.heic'),
+    imagePath('images/gallery/Norilsk 2023/IMG_8549.heic'),
+    imagePath('images/gallery/Norilsk 2023/IMG_8536.heic'),
+    imagePath('images/gallery/Norilsk 2023/IMG_8528.heic'),
+    imagePath('images/gallery/Norilsk 2023/IMG_8501.heic'),
+    imagePath('images/gallery/Norilsk 2023/IMG_8498.heic'),
+    imagePath('images/gallery/Norilsk 2023/IMG_8410.heic'),
+    imagePath('images/gallery/Norilsk 2023/IMG_8405.heic'),
+    imagePath('images/gallery/Norilsk 2023/IMG_8402.heic'),
+    imagePath('images/gallery/Norilsk 2023/IMG_8392.heic'),
+    imagePath('images/gallery/Norilsk 2023/IMG_8387.heic'),
+    imagePath('images/gallery/Norilsk 2023/IMG_3776.heic'),
+  ]),
+...createPhotos('Мадагаскар, 2023', [
+    imagePath('images/gallery/Madaga 2023/IMG_6712.jpeg'),
+    imagePath('images/gallery/Madaga 2023/IMG_6711.jpeg'),
+    imagePath('images/gallery/Madaga 2023/IMG_6710.jpeg'),
+    imagePath('images/gallery/Madaga 2023/IMG_6709.jpeg'),
+    imagePath('images/gallery/Madaga 2023/IMG_6708.jpeg'),
+     ]),
+...createPhotos('Сурья Казанская, 2024', [
+    imagePath('images/gallery/Suria/IMG_3204.jpeg'),
+    imagePath('images/gallery/Suria/IMG_3343.jpeg'),
+    imagePath('images/gallery/Suria/IMG_3319.png'),
+    imagePath('images/gallery/Suria/IMG_3315.jpeg'),
+    imagePath('images/gallery/Suria/IMG_3252.jpeg'),
+    imagePath('images/gallery/Suria/IMG_3245.jpeg'),
+    imagePath('images/gallery/Suria/IMG_3233.jpeg'),
+    imagePath('images/gallery/Suria/IMG_3216.jpeg'),
+    imagePath('images/gallery/Suria/IMG_3212.jpeg'),
+  ]),
+...createPhotos('Чукотка, 2024', [
+    imagePath('images/gallery/Chukotka/IMG_6729.jpeg'),
+    imagePath('images/gallery/Chukotka/IMG_6728.jpeg'),
+    imagePath('images/gallery/Chukotka/IMG_6727.jpeg'),
+    imagePath('images/gallery/Chukotka/IMG_6726.jpeg'),
+    imagePath('images/gallery/Chukotka/IMG_6725.jpeg'),
+    imagePath('images/gallery/Chukotka/IMG_6724.jpeg'),
+    imagePath('images/gallery/Chukotka/IMG_6723.jpeg'),
+    imagePath('images/gallery/Chukotka/IMG_6722.jpeg'),
+    imagePath('images/gallery/Chukotka/IMG_67221jpeg'),
+    imagePath('images/gallery/Chukotka/IMG_6720.jpeg'),
+    imagePath('images/gallery/Chukotka/IMG_6719.jpeg'),
+  ]),
+...createPhotos('Хабаровский край, 2024', [
+    imagePath('images/gallery/Habara/IMG_6734.jpeg'),
+    imagePath('images/gallery/Habara/IMG_6733.jpeg'),
+    imagePath('images/gallery/Habara/IMG_6732.jpeg'),
+    imagePath('images/gallery/Habara/IMG_6731.jpeg'),
+    imagePath('images/gallery/Habara/IMG_6730.jpeg'),
+  ]),
+...createPhotos('ЦАР, 2025', [
+    imagePath('images/gallery/ZAR/IMG_6746.jpeg'),
+imagePath('images/gallery/ZAR/IMG_6744.jpeg'),
+imagePath('images/gallery/ZAR/IMG_6743.jpeg'),
+imagePath('images/gallery/ZAR/IMG_6742.jpeg'),
+imagePath('images/gallery/ZAR/IMG_6741.jpeg'),
+imagePath('images/gallery/ZAR/IMG_6740.jpeg'),
+imagePath('images/gallery/ZAR/IMG_6739.jpeg'),
+imagePath('images/gallery/ZAR/IMG_6738.jpeg'),
+imagePath('images/gallery/ZAR/IMG_6690.jpeg'),
+  ]),
+...createPhotos('Забайкальский край, 2026', [
+    imagePath('images/gallery/Zabaikal/IMG_6755.jpeg'),
+    imagePath('images/gallery/Zabaikal/IMG_6756.jpeg'),
+    imagePath('images/gallery/Zabaikal/IMG_6757.jpeg'),
+    imagePath('images/gallery/Zabaikal/IMG_6758.jpeg'),
+    imagePath('images/gallery/Zabaikal/IMG_6759.jpeg'),
+    imagePath('images/gallery/Zabaikal/IMG_6760.jpeg'),
+  ]),
+  ...createPhotos('Конференции', [
+    imagePath('images/gallery/Konferenz/IMG_6597.jpeg'),
+    imagePath('images/gallery/Konferenz/IMG_6713.jpeg'),
+    imagePath('images/gallery/Konferenz/IMG_6714.jpeg'),
+    imagePath('images/gallery/Konferenz/IMG_6715.jpeg'),
+    imagePath('images/gallery/Konferenz/IMG_6716.jpeg'),
+    imagePath('images/gallery/Konferenz/IMG_6717.jpeg'),
+    imagePath('images/gallery/Konferenz/IMG_6718.jpeg'),
+    imagePath('images/gallery/Konferenz/IMG_6735.jpeg'),
+    imagePath('images/gallery/Konferenz/IMG_6736.jpeg'),
+    imagePath('images/gallery/Konferenz/IMG_6737.jpeg'),
+    imagePath('images/gallery/Konferenz/IMG_6747.jpeg'),
+    imagePath('images/gallery/Konferenz/IMG_6748.jpeg'),
+    imagePath('images/gallery/Konferenz/IMG_6749.jpeg'),
+    imagePath('images/gallery/Konferenz/IMG_6750.jpeg'),
+    imagePath('images/gallery/Konferenz/IMG_6754.jpeg'),
+    imagePath('images/gallery/Konferenz/IMG_6761.jpeg'),
+  ]),
 ]
 
 export default function Gallery() {
   const [filter, setFilter] = useState('Все')
   const [lightbox, setLightbox] = useState(null)
 
-  const filtered = filter === 'Все' ? photos : photos.filter(p => p.cat === filter)
+  const filtered = filter === 'Все' ? photos : photos.filter(p => p.group === filter)
 
   return (
     <div style={{ paddingTop: 72 }}>

@@ -1,8 +1,21 @@
 import { Link } from 'react-router-dom'
 import { Phone, Mail, MapPin } from 'lucide-react'
+import { imagePath } from '../utils/paths'
+import { useState, useEffect } from 'react'
 
 export default function Footer() {
   const year = new Date().getFullYear()
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
   return (
     <footer style={{
       background: '#f0f2f8',
@@ -11,7 +24,12 @@ export default function Footer() {
       paddingBottom: 32,
     }}>
       <div className="container">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: 40, marginBottom: 48 }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))',
+          gap: 40,
+          marginBottom: 48
+        }}>
           {/* Brand */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
@@ -21,7 +39,7 @@ export default function Footer() {
                 overflow: 'hidden',
                 border: '1px solid rgba(212,160,23,0.25)',
               }}>
-                <img src="/images/logo.jpg" alt="СЗГГК" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={imagePath('favicon.svg')} alt="СЗГГК" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
               <div>
                 <div style={{ fontFamily: 'Russo One', fontSize: 15, color: 'var(--text-primary)' }}>ГЕОКОМПЛЕКС</div>
@@ -33,46 +51,50 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Navigation */}
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: 2, textTransform: 'uppercase', color: '#22d3ee', marginBottom: 16 }}>
-              Навигация
+          {/* Navigation - показываем только на десктопе */}
+          {!isMobile && (
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: 2, textTransform: 'uppercase', color: '#22d3ee', marginBottom: 16 }}>
+                Навигация
+              </div>
+              {[
+                ['/', 'Главная'],
+                ['/about', 'О компании'],
+                ['/services', 'Услуги'],
+                ['/equipment', 'Оборудование'],
+                ['/team', 'Команда'],
+                ['/projects', 'Проекты и карта'],
+                ['/contacts', 'Контакты'],
+              ].map(([path, label]) => (
+                <Link key={path} to={path} style={{
+                  display: 'block', color: 'var(--text-muted)', textDecoration: 'none',
+                  fontSize: 13, marginBottom: 8, transition: 'color 0.2s',
+                }}
+                  onMouseEnter={e => e.currentTarget.style.color = '#d4a017'}
+                  onMouseLeave={e => e.currentTarget.style.color = '#64748b'}
+                >{label}</Link>
+              ))}
             </div>
-            {[
-              ['/', 'Главная'],
-              ['/about', 'О компании'],
-              ['/services', 'Услуги'],
-              ['/equipment', 'Оборудование'],
-              ['/team', 'Команда'],
-              ['/projects', 'Проекты и карта'],
-              ['/contacts', 'Контакты'],
-            ].map(([path, label]) => (
-              <Link key={path} to={path} style={{
-                display: 'block', color: 'var(--text-muted)', textDecoration: 'none',
-                fontSize: 13, marginBottom: 8, transition: 'color 0.2s',
-              }}
-                onMouseEnter={e => e.currentTarget.style.color = '#d4a017'}
-                onMouseLeave={e => e.currentTarget.style.color = '#64748b'}
-              >{label}</Link>
-            ))}
-          </div>
+          )}
 
-          {/* Services */}
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: 2, textTransform: 'uppercase', color: '#22d3ee', marginBottom: 16 }}>
-              Услуги
+          {/* Services - показываем только на десктопе */}
+          {!isMobile && (
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: 2, textTransform: 'uppercase', color: '#22d3ee', marginBottom: 16 }}>
+                Услуги
+              </div>
+              {[
+                'Геофизические работы',
+                'Геологические работы',
+                'Геохимические работы',
+                'Дистанционное зондирование',
+                'Инженерная геофизика',
+                'Переинтерпретация данных',
+              ].map(s => (
+                <div key={s} style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 8 }}>{s}</div>
+              ))}
             </div>
-            {[
-              'Геофизические работы',
-              'Геологические работы',
-              'Геохимические работы',
-              'Дистанционное зондирование',
-              'Инженерная геофизика',
-              'Переинтерпретация данных',
-            ].map(s => (
-              <div key={s} style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 8 }}>{s}</div>
-            ))}
-          </div>
+          )}
 
           {/* Contacts */}
           <div>
@@ -92,20 +114,18 @@ export default function Footer() {
         </div>
 
         {/* Bottom */}
-        <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+        <div style={{
+          borderTop: '1px solid rgba(0,0,0,0.06)',
+          paddingTop: 24,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 12
+        }}>
           <p style={{ fontSize: 12, color: '#374151' }}>
             © {year} ООО «СЗГГК Геокомплекс». Все права защищены.
           </p>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {['ИМ', 'ГФ', 'ГХ'].map(tag => (
-              <span key={tag} style={{
-                fontSize: 10, fontWeight: 700, padding: '3px 8px',
-                background: 'rgba(8,145,178,0.08)',
-                border: '1px solid rgba(8,145,178,0.15)',
-                borderRadius: 4, color: '#22d3ee', letterSpacing: 1,
-              }}>{tag}</span>
-            ))}
-          </div>
         </div>
       </div>
     </footer>

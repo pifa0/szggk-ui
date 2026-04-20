@@ -1,10 +1,12 @@
+import { imagePath } from '../utils/paths'
+
 const equipment = [
   {
     name: 'МЕДУЗА-В2 (SGD-EEM)',
     category: 'Электроразведка',
     color: '#d4a017',
     icon: '⚡',
-    photo: 'public/images/equipment/МЕДУЗА-В2.JPG',
+    photo: imagePath('images/equipment/МЕДУЗА-В2.JPG'),
     desc: 'Многоканальная система измерений электрических параметров горных пород. Обеспечивает одновременную регистрацию данных по нескольким методам.',
     specs: [
       ['Тип', 'Многоканальный измеритель'],
@@ -18,7 +20,7 @@ const equipment = [
     category: 'Электроразведка',
     color: '#d4a017',
     icon: '⚡',
-    photo: 'public/images/equipment/СКАТ-II.JPG',
+    photo: imagePath('images/equipment/СКАТ-II.JPG'),
     desc: 'Генератор электрических импульсов мощностью 200 Вт для методов вызванной поляризации и переходных процессов.',
     specs: [
       ['Мощность', '200 Вт'],
@@ -32,7 +34,7 @@ const equipment = [
     category: 'Электроразведка',
     color: '#d4a017',
     icon: '⚡',
-    photo: 'public/images/equipment/СКАТ-2000.JPG',
+    photo: imagePath('images/equipment/СКАТ-2000.JPG'),
     desc: 'Высокомощный генератор электрических импульсов 2000 Вт для проведения глубинных геоэлектрических исследований.',
     specs: [
       ['Мощность', '2000 Вт'],
@@ -46,7 +48,7 @@ const equipment = [
     category: 'Магниторазведка',
     color: '#0891b2',
     icon: '🧲',
-    photo: 'public/images/equipment/MiniMag.jpg',
+    photo: imagePath('images/equipment/MiniMag.jpg'),
     desc: 'Сверхлёгкий протонный магнитометр на эффекте Оверхаузера. Обеспечивает прецизионные измерения магнитного поля Земли с высокой точностью.',
     specs: [
       ['Принцип работы', 'Эффект Оверхаузера'],
@@ -60,7 +62,7 @@ const equipment = [
     category: 'Радиометрия',
     color: '#059669',
     icon: '📊',
-    photo: 'public/images/equipment/RS-125.BMP',
+    photo: imagePath('images/equipment/RS-125.BMP'),
     desc: 'Портативный спектрометр-радиометр для определения радиоактивности горных пород непосредственно в поле.',
     specs: [
       ['Тип', 'Портативный спектрометр'],
@@ -74,7 +76,7 @@ const equipment = [
     category: 'Радиометрия',
     color: '#059669',
     icon: '📊',
-    photo: 'public/images/equipment/МКСП-01.PNG',
+    photo: imagePath('images/equipment/МКСП-01.PNG'),
     desc: 'Гамма-спектрометр для точного определения активности радионуклидов в образцах горных пород и руд в лабораторных условиях.',
     specs: [
       ['Тип', 'Лабораторный спектрометр'],
@@ -88,7 +90,7 @@ const equipment = [
     category: 'Геохимия',
     color: '#dc2626',
     icon: '🔬',
-    photo: 'public/images/equipment/DELTA_Professional.PNG',
+    photo: imagePath('images/equipment/DELTA_Professional.PNG'),
     desc: 'Портативный рентгенофлуоресцентный анализатор для экспрессного определения элементного состава горных пород и руд прямо в поле.',
     specs: [
       ['Метод', 'РФА (XRF)'],
@@ -102,7 +104,7 @@ const equipment = [
     category: 'Геодезия',
     color: '#0891b2',
     icon: '📍',
-    photo: 'public/images/equipment/Оптимум.PNG',
+    photo: imagePath('images/equipment/Оптимум.PNG'),
     desc: 'ГНСС-комплекс для высокоточного позиционирования и привязки геофизических наблюдений к топографической основе.',
     specs: [
       ['Тип', 'ГНСС (GPS/ГЛОНАСС)'],
