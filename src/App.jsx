@@ -44,145 +44,21 @@ const getBasename = () => {
 
 export default function App() {
   useEffect(() => {
-    // Инициализируем Google Translate
     initGoogleTranslate()
 
-    // Агрессивное скрытие всех элементов Google Translate
-    const hideGoogleElements = () => {
-      // Добавляем глобальные стили
-      const style = document.createElement('style')
-      style.id = 'gt-hide-style'
-      style.textContent = `
-        /* Скрываем баннер */
-        .goog-te-banner-frame,
-        iframe.goog-te-banner-frame,
-        #goog-gt-tt,
-        .goog-te-balloon-frame,
-        .goog-tooltip,
-        .goog-tooltip:hover,
-        .goog-text-highlight {
-          display: none !important;
-          visibility: hidden !important;
-          opacity: 0 !important;
-          height: 0 !important;
-          width: 0 !important;
-          position: absolute !important;
-          top: -1000px !important;
-        }
-
-        /* Убираем отступ сверху, который добавляет Google Translate */
-        body {
-          top: 0 !important;
-          position: relative !important;
-          margin-top: 0 !important;
-          padding-top: 0 !important;
-        }
-
-        /* Скрываем логотип Google */
-        .goog-logo-link,
-        .goog-te-gadget span,
-        .goog-te-gadget div:first-child {
-          display: none !important;
-          visibility: hidden !important;
-        }
-
-        /* Делаем прозрачным контейнер */
-        .goog-te-gadget {
-          color: transparent !important;
-          font-size: 0 !important;
-          line-height: 0 !important;
-          height: 0 !important;
-          overflow: hidden !important;
-        }
-
-        /* Возвращаем цвет для select */
-        .goog-te-gadget .goog-te-combo {
-          color: #000 !important;
-          font-size: 12px !important;
-          line-height: normal !important;
-          height: auto !important;
-          overflow: visible !important;
-        }
-
-        /* Скрываем все iframe Google */
-        iframe[src*="translate.google.com"],
-        iframe[id*="google"],
-        iframe[src*="translate.googleapis.com"] {
-          display: none !important;
-          visibility: hidden !important;
-          height: 0 !important;
-          width: 0 !important;
-        }
-
-        /* Скрываем плашку skiptranslate */
-        .skiptranslate {
-          display: none !important;
-          height: 0 !important;
-          overflow: hidden !important;
-        }
-
-        /* Убираем отступ у html */
-        html {
-          margin-top: 0 !important;
-          padding-top: 0 !important;
-        }
-      `
-
-      if (!document.getElementById('gt-hide-style')) {
-        document.head.appendChild(style)
+    const hideTranslateBanner = () => {
+      const banner = document.querySelector('.goog-te-banner-frame')
+      if (banner) {
+        banner.style.display = 'none'
+        banner.style.visibility = 'hidden'
       }
-
-      // Принудительно скрываем элементы через DOM
-      const elementsToHide = [
-        '.goog-te-banner-frame',
-        'iframe.goog-te-banner-frame',
-        '#goog-gt-tt',
-        '.goog-te-balloon-frame',
-        '.goog-tooltip',
-        '.skiptranslate'
-      ]
-
-      elementsToHide.forEach(selector => {
-        const elements = document.querySelectorAll(selector)
-        elements.forEach(el => {
-          if (el) {
-            el.style.display = 'none'
-            el.style.visibility = 'hidden'
-            el.style.height = '0'
-            el.style.width = '0'
-            el.style.position = 'absolute'
-            el.style.top = '-1000px'
-          }
-        })
-      })
-
-      // Сбрасываем top у body
       document.body.style.top = '0px'
       document.body.style.marginTop = '0px'
-      document.body.style.paddingTop = '0px'
       document.documentElement.style.marginTop = '0px'
     }
 
-    // Вызываем сразу
-    hideGoogleElements()
-
-    // И многократно с задержками
-    const delays = [10, 50, 100, 200, 500, 1000, 2000, 3000, 5000]
-    delays.forEach(delay => {
-      setTimeout(hideGoogleElements, delay)
-    })
-
-    // Наблюдатель за изменениями DOM
-    const observer = new MutationObserver(() => {
-      hideGoogleElements()
-    })
-
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['style', 'class']
-    })
+    hideTranslateBanner()
+    const intervalId = window.setInterval(hideTranslateBanner, 500)
 
     // Очищаем URL от googtrans хеша
     if (window.location.hash && window.location.hash.includes('googtrans')) {
@@ -190,7 +66,7 @@ export default function App() {
     }
 
     return () => {
-      observer.disconnect()
+      window.clearInterval(intervalId)
     }
   }, [])
 
@@ -200,7 +76,16 @@ export default function App() {
     <BrowserRouter basename={basename}>
       <ScrollToTop />
       <PathRestorer />
-      <div id="google_translate_element" style={{ display: 'none', position: 'absolute', top: '-1000px' }} />
+      <div
+        id="google_translate_element"
+        style={{
+          position: 'absolute',
+          left: '-9999px',
+          top: '0',
+          opacity: 0,
+          pointerEvents: 'none',
+        }}
+      />
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />

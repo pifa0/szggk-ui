@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { YMaps, Map, Placemark } from '@mr-igorinni/react-yandex-maps-fork'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { imagePath } from '../utils/paths'
@@ -411,7 +411,6 @@ const typeInfo = {
     space: { label: 'Космодешифрирование', color: '#5A67D8' },
 }
 
-/** Map marker size in CSS px — tweak MAP_DOT_PX only */
 const MAP_DOT_PX = 22
 
 function mapPlacemarkIconOptions(color) {
@@ -434,7 +433,24 @@ function mapPlacemarkIconOptions(color) {
     }
 }
 
-// Карусель
+// Хук для отслеживания клика вне элемента
+function useClickOutside(ref, handler) {
+    useEffect(() => {
+        const listener = (event) => {
+            if (!ref.current || ref.current.contains(event.target)) {
+                return
+            }
+            handler(event)
+        }
+        document.addEventListener('mousedown', listener)
+        document.addEventListener('touchstart', listener)
+        return () => {
+            document.removeEventListener('mousedown', listener)
+            document.removeEventListener('touchstart', listener)
+        }
+    }, [ref, handler])
+}
+
 function ImageCarousel({ images, onImageClick }) {
     const [currentIndex, setCurrentIndex] = useState(0)
     const [isHovered, setIsHovered] = useState(false)
@@ -459,7 +475,6 @@ function ImageCarousel({ images, onImageClick }) {
         setCurrentIndex((prev) => (prev - 1 + images.length) % images.length)
     }
 
-    // На мобильных кнопки видны всегда, на десктопе - при наведении
     const showButtons = isMobile ? true : isHovered
 
     return (
@@ -488,76 +503,18 @@ function ImageCarousel({ images, onImageClick }) {
                     transition: 'transform 0.3s ease',
                 }}
             />
-
             {images.length > 1 && showButtons && (
                 <>
-                    <button
-                        onClick={prevImage}
-                        style={{
-                            position: 'absolute',
-                            left: 12,
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            background: 'rgba(0,0,0,0.5)',
-                            backdropFilter: 'blur(4px)',
-                            border: 'none',
-                            borderRadius: 40,
-                            width: isMobile ? 32 : 40,
-                            height: isMobile ? 32 : 40,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            color: 'white',
-                            transition: 'all 0.2s ease',
-                            zIndex: 10,
-                        }}
-                    >
+                    <button onClick={prevImage} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', border: 'none', borderRadius: 40, width: isMobile ? 32 : 40, height: isMobile ? 32 : 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white', transition: 'all 0.2s ease', zIndex: 10 }}>
                         <ChevronLeft size={isMobile ? 18 : 22} strokeWidth={1.5} />
                     </button>
-
-                    <button
-                        onClick={nextImage}
-                        style={{
-                            position: 'absolute',
-                            right: 12,
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            background: 'rgba(0,0,0,0.5)',
-                            backdropFilter: 'blur(4px)',
-                            border: 'none',
-                            borderRadius: 40,
-                            width: isMobile ? 32 : 40,
-                            height: isMobile ? 32 : 40,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            color: 'white',
-                            transition: 'all 0.2s ease',
-                            zIndex: 10,
-                        }}
-                    >
+                    <button onClick={nextImage} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', border: 'none', borderRadius: 40, width: isMobile ? 32 : 40, height: isMobile ? 32 : 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white', transition: 'all 0.2s ease', zIndex: 10 }}>
                         <ChevronRight size={isMobile ? 18 : 22} strokeWidth={1.5} />
                     </button>
                 </>
             )}
-
-            {/* Индикатор количества фото */}
             {images.length > 1 && (
-                <div
-                    style={{
-                        position: 'absolute',
-                        bottom: 12,
-                        right: 12,
-                        background: 'rgba(0,0,0,0.6)',
-                        borderRadius: 20,
-                        padding: '4px 10px',
-                        fontSize: 11,
-                        color: 'white',
-                        fontWeight: 500,
-                    }}
-                >
+                <div style={{ position: 'absolute', bottom: 12, right: 12, background: 'rgba(0,0,0,0.6)', borderRadius: 20, padding: '4px 10px', fontSize: 11, color: 'white', fontWeight: 500 }}>
                     {currentIndex + 1} / {images.length}
                 </div>
             )}
@@ -573,7 +530,6 @@ function ImageModal({ images, currentIndex, onClose, onPrev, onNext }) {
             if (e.key === 'ArrowRight') onNext()
         }
         window.addEventListener('keydown', handleEsc)
-        // Блокируем скролл на body при открытом модальном окне
         document.body.style.overflow = 'hidden'
         return () => {
             window.removeEventListener('keydown', handleEsc)
@@ -585,132 +541,23 @@ function ImageModal({ images, currentIndex, onClose, onPrev, onNext }) {
     const activeImage = images[currentIndex]
 
     return (
-        <div
-            style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                background: 'rgba(0,0,0,0.95)',
-                zIndex: 99999,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-            }}
-            onClick={onClose}
-        >
-            {/* Крестик закрытия - всегда виден, увеличен для мобильных */}
-            <button
-                onClick={onClose}
-                style={{
-                    position: 'absolute',
-                    top: 20,
-                    right: 20,
-                    background: 'rgba(0,0,0,0.6)',
-                    backdropFilter: 'blur(8px)',
-                    border: '1px solid rgba(255,255,255,0.3)',
-                    borderRadius: 50,
-                    width: 44,
-                    height: 44,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    color: 'white',
-                    transition: 'all 0.2s ease',
-                    zIndex: 100000,
-                    boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
-                }}
-            >
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} onClick={onClose}>
+            <button onClick={onClose} style={{ position: 'absolute', top: 20, right: 20, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 50, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white', transition: 'all 0.2s ease', zIndex: 100000, boxShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
                 <X size={24} strokeWidth={2} />
             </button>
-
             {images.length > 1 && (
                 <>
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            onPrev()
-                        }}
-                        style={{
-                            position: 'absolute',
-                            left: 16,
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            background: 'rgba(0,0,0,0.5)',
-                            backdropFilter: 'blur(8px)',
-                            border: '1px solid rgba(255,255,255,0.2)',
-                            borderRadius: 40,
-                            width: 44,
-                            height: 44,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            color: '#fff',
-                            transition: 'all 0.2s ease',
-                            zIndex: 100000,
-                        }}
-                    >
+                    <button onClick={(e) => { e.stopPropagation(); onPrev() }} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 40, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff', transition: 'all 0.2s ease', zIndex: 100000 }}>
                         <ChevronLeft size={24} strokeWidth={2} />
                     </button>
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            onNext()
-                        }}
-                        style={{
-                            position: 'absolute',
-                            right: 16,
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            background: 'rgba(0,0,0,0.5)',
-                            backdropFilter: 'blur(8px)',
-                            border: '1px solid rgba(255,255,255,0.2)',
-                            borderRadius: 40,
-                            width: 44,
-                            height: 44,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            color: '#fff',
-                            transition: 'all 0.2s ease',
-                            zIndex: 100000,
-                        }}
-                    >
+                    <button onClick={(e) => { e.stopPropagation(); onNext() }} style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 40, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff', transition: 'all 0.2s ease', zIndex: 100000 }}>
                         <ChevronRight size={24} strokeWidth={2} />
                     </button>
                 </>
             )}
-            <img
-                src={activeImage}
-                alt="Полный размер"
-                style={{
-                    maxWidth: 'calc(100% - 40px)',
-                    maxHeight: 'calc(100% - 40px)',
-                    objectFit: 'contain',
-                }}
-                onClick={(e) => e.stopPropagation()}
-            />
+            <img src={activeImage} alt="Полный размер" style={{ maxWidth: 'calc(100% - 40px)', maxHeight: 'calc(100% - 40px)', objectFit: 'contain' }} onClick={(e) => e.stopPropagation()} />
             {images.length > 1 && (
-                <div
-                    style={{
-                        position: 'absolute',
-                        bottom: 20,
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        background: 'rgba(0,0,0,0.7)',
-                        color: '#fff',
-                        fontSize: 13,
-                        fontWeight: 500,
-                        padding: '6px 14px',
-                        borderRadius: 20,
-                        zIndex: 100000,
-                    }}
-                >
+                <div style={{ position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: 13, fontWeight: 500, padding: '6px 14px', borderRadius: 20, zIndex: 100000 }}>
                     {currentIndex + 1} / {images.length}
                 </div>
             )}
@@ -718,7 +565,6 @@ function ImageModal({ images, currentIndex, onClose, onPrev, onNext }) {
     )
 }
 
-// Компонент карточки проекта - без обрезания текста
 function ProjectCard({ loc, markerColor, onSelect, isSelected, onImageClick }) {
     return (
         <div
@@ -737,14 +583,13 @@ function ProjectCard({ loc, markerColor, onSelect, isSelected, onImageClick }) {
             {loc.images && <ImageCarousel images={loc.images} onImageClick={onImageClick} />}
             <div style={{ padding: '16px 20px 20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: markerColor }} />
+                    {/* ИСПРАВЛЕНИЕ БАГА 1: добавлен flex-shrink: 0 чтобы точка не сжималась в овал */}
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: markerColor, flexShrink: 0 }} />
                     <span style={{ fontSize: 11, fontWeight: 600, color: markerColor, textTransform: 'uppercase', letterSpacing: 1 }}>
                         {loc.region}
                     </span>
                 </div>
                 <h4 style={{ fontSize: 18, fontWeight: 700, marginBottom: 10, color: '#1e293b' }}>{loc.name}</h4>
-
-                {/* Полный текст без обрезания */}
                 {typeof loc.desc === 'string' ? (
                     <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.5, marginBottom: 14, whiteSpace: 'pre-wrap', textIndent: '15px', textAlign: 'justify' }}>
                         {loc.desc}
@@ -756,7 +601,6 @@ function ProjectCard({ loc, markerColor, onSelect, isSelected, onImageClick }) {
                         </p>
                     ))
                 )}
-
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                     {loc.works.map(w => (
                         <span key={w} style={{ background: `${markerColor}10`, color: markerColor, padding: '4px 12px', borderRadius: 30, fontSize: 11, fontWeight: 500 }}>
@@ -778,7 +622,14 @@ export default function Projects() {
     const [mapInfoPosition, setMapInfoPosition] = useState(null)
     const [isMobile, setIsMobile] = useState(false)
 
-    // Определяем мобильное устройство
+    const mapContainerRef = useRef(null)
+
+    const handleClickOutside = useCallback(() => {
+        setHoveredLocation(null)
+    }, [])
+
+    useClickOutside(mapContainerRef, handleClickOutside)
+
     useEffect(() => {
         const checkMobile = () => setIsMobile(window.innerWidth <= 768)
         checkMobile()
@@ -786,15 +637,12 @@ export default function Projects() {
         return () => window.removeEventListener('resize', checkMobile)
     }, [])
 
-    // Фильтруем проекты, исключая офис
     const filteredProjects = useMemo(() => {
-        const projects = filter === 'all'
+        return filter === 'all'
             ? locations.filter(l => l.type !== 'office')
             : locations.filter(l => l.type === filter && l.type !== 'office')
-        return projects
     }, [filter])
 
-    // На мобильных - одна колонка, на десктопе - две
     const leftColumnProjects = useMemo(() => {
         if (isMobile) return filteredProjects
         return filteredProjects.filter((_, index) => index % 2 === 0)
@@ -805,7 +653,6 @@ export default function Projects() {
         return filteredProjects.filter((_, index) => index % 2 === 1)
     }, [filteredProjects, isMobile])
 
-    // Для карты используем все локации (включая офис)
     const filteredForMap = useMemo(() =>
         filter === 'all' ? locations : locations.filter(l => l.type === filter),
         [filter]
@@ -838,6 +685,7 @@ export default function Projects() {
             return { ...prev, index: nextIndex }
         })
     }, [])
+
     const mapActiveLocation = hoveredLocation || selected
 
     const updateMapInfoPosition = useCallback(() => {
@@ -903,7 +751,6 @@ export default function Projects() {
 
             <section className="section" style={{ paddingTop: 0 }}>
                 <div className="container">
-                    {/* Фильтры - горизонтальный скролл на мобильных */}
                     <div style={{
                         display: 'flex',
                         flexWrap: isMobile ? 'nowrap' : 'wrap',
@@ -941,14 +788,15 @@ export default function Projects() {
                                 cursor: 'pointer',
                                 transition: 'all 0.2s ease',
                             }}>
-                                <div style={{ width: 12, height: 12, borderRadius: '50%', background: info.color, boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.05)' }} />
+                                <div style={{ width: 12, height: 12, borderRadius: '50%', background: info.color, boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.05)', flexShrink: 0 }} />
                                 <span>{info.label}</span>
                             </button>
                         ))}
                     </div>
 
-                    {/* Карта */}
+                    {/* ИСПРАВЛЕНИЕ БАГА 2: добавлен реф на контейнер карты */}
                     <div
+                        ref={mapContainerRef}
                         className="projects-map-shell"
                         style={{ height: isMobile ? 400 : 520, borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', marginBottom: 32, position: 'relative' }}
                         onMouseLeave={() => setHoveredLocation(null)}
@@ -1027,11 +875,9 @@ export default function Projects() {
                         </YMaps>
                     </div>
 
-                    {/* Список объектов */}
                     <div>
                         <h3 style={{ fontFamily: 'Russo One', fontSize: isMobile ? 20 : 22, marginBottom: 20 }}>Детали проектов</h3>
                         <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 24, alignItems: 'flex-start' }}>
-                            {/* Левая колонка */}
                             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 24 }}>
                                 {leftColumnProjects.map(loc => {
                                     const markerColor = typeInfo[loc.type]?.color || loc.color
@@ -1047,7 +893,6 @@ export default function Projects() {
                                     )
                                 })}
                             </div>
-                            {/* Правая колонка - только на десктопе */}
                             {!isMobile && rightColumnProjects.length > 0 && (
                                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 24 }}>
                                     {rightColumnProjects.map(loc => {

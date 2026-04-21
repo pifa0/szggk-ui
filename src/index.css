@@ -40,116 +40,51 @@ body {
   position: relative !important;
 }
 
-/* ===== GOOGLE TRANSLATE - ПОЛНОЕ СКРЫТИЕ ВСЕХ ЭЛЕМЕНТОВ ===== */
-
-/* Скрываем плашку Google Translate - МАКСИМАЛЬНАЯ АГРЕССИВНОСТЬ */
-.goog-te-banner-frame,
-iframe.goog-te-banner-frame,
-.goog-te-banner-frame.skiptranslate,
-iframe[id*="google_ads"],
-iframe[src*="translate.google.com"],
-iframe[src*="translate.googleapis.com"] {
+/* ===== GOOGLE TRANSLATE (SAFE OVERRIDES) ===== */
+.goog-te-banner-frame.skiptranslate {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
+  pointer-events: none !important;
   height: 0 !important;
-  width: 0 !important;
   max-height: 0 !important;
-  max-width: 0 !important;
-  min-height: 0 !important;
-  min-width: 0 !important;
-  position: absolute !important;
   top: -9999px !important;
-  left: -9999px !important;
-  pointer-events: none !important;
-  z-index: -1 !important;
-  border: none !important;
-  overflow: hidden !important;
-  clip: rect(0, 0, 0, 0) !important;
 }
 
-/* Скрываем меню Google Translate */
-.goog-te-menu-frame,
-iframe.goog-te-menu-frame,
-.goog-te-balloon-frame,
-iframe.goog-te-balloon-frame {
-  position: fixed !important;
-  top: -10000px !important;
-  left: -10000px !important;
-  width: 1px !important;
-  height: 1px !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  z-index: -999 !important;
-  visibility: hidden !important;
-  display: none !important;
-}
-
-/* Скрываем тултипы */
-#goog-gt-tt,
-.goog-tooltip,
-.goog-tooltip:hover,
-.goog-text-highlight {
+iframe.goog-te-banner-frame {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;
-}
-
-/* Прячем сам виджет */
-#google_translate_element {
-  position: absolute !important;
-  top: -9999px !important;
-  left: -9999px !important;
-  width: 1px !important;
-  height: 1px !important;
-  overflow: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  display: none !important;
-}
-
-/* Скрываем гаджет */
-.goog-te-gadget,
-.goog-te-gadget-simple,
-.goog-te-gadget-icon,
-.skiptranslate {
-  display: none !important;
-  visibility: hidden !important;
   height: 0 !important;
-  width: 0 !important;
-  overflow: hidden !important;
-  position: absolute !important;
+  max-height: 0 !important;
   top: -9999px !important;
 }
 
-/* Но оставляем рабочим select для нашего контроля */
-.goog-te-gadget .goog-te-combo {
-  display: inline-block !important;
-  visibility: visible !important;
-  height: auto !important;
-  width: auto !important;
-  position: static !important;
-  opacity: 1 !important;
+body > .skiptranslate,
+body > iframe.skiptranslate {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  height: 0 !important;
+  max-height: 0 !important;
+  top: -9999px !important;
 }
 
-/* Убираем любые отступы сверху */
-body > iframe,
-body > div[style*="top"],
-body > div[id*="google"] {
+body {
+  top: 0 !important;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+html {
+  margin-top: 0 !important;
+}
+
+#goog-gt-tt,
+.goog-tooltip {
   display: none !important;
 }
-
-/* Фиксируем навигацию */
-nav {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  z-index: 1000 !important;
-}
-
-/* ===== КОНЕЦ GOOGLE TRANSLATE ===== */
 
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: var(--bg-secondary); }

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { X } from 'lucide-react'
 import { imagePath } from '../utils/paths'
 
-const categories = ['Все', 'Республика Карелия, 2022', 'Республика Коми, 2023', 'Норильск, 2023', 'Мадагаскар, 2023', 'Сурья Казанская, 2024', 'Чукотка, 2024', 'Хабаровский край, 2024', 'ЦАР, 2025', 'Забайкальский край, 2026', 'Конференции']
+const categories = ['Все', 'Республика Карелия, 2022', 'Республика Коми, 2023', 'Норильск, 2023', 'Мадагаскар, 2023', 'Сурья Казанская, 2024', 'Чукотка, 2024', 'Хабаровский край, 2024', 'ЦАР, 2025', 'Забайкальский край, 2026', 'Ангола', 'Зимбабве, 2020', 'Камчатка, 2011', 'Приполярный Урал, 2020', 'Якутия, 2008', 'Конференции']
 
 // Создаём фото с группой
 const createPhotos = (group, srcList) => srcList.map(src => ({ src, group }))
@@ -97,6 +97,42 @@ const photos = [
     imagePath('images/gallery/Zabaikal/IMG_6758.jpeg'),
     imagePath('images/gallery/Zabaikal/IMG_6759.jpeg'),
     imagePath('images/gallery/Zabaikal/IMG_6760.jpeg')
+  ]),
+  ...createPhotos('Ангола', [
+    imagePath('images/gallery/Аngola/DSCN0573.JPG'),
+    imagePath('images/gallery/Аngola/DSCN0678.JPG'),
+    imagePath('images/gallery/Аngola/DSCN0704.JPG'),
+    imagePath('images/gallery/Аngola/19.jpg'),
+    imagePath('images/gallery/Аngola/28.jpg'),
+  ]),
+ ...createPhotos('Зимбабве, 2020', [
+    imagePath('images/gallery/Zimbabve 2020/IMG_20200306_103514.jpg'),
+imagePath('images/gallery/Zimbabve 2020/IMG_20200405_080755.jpg'),
+imagePath('images/gallery/Zimbabve 2020/IMG_20200313_100023.jpg'),
+imagePath('images/gallery/Zimbabve 2020/IMG_20200324_124024.jpg'),
+imagePath('images/gallery/Zimbabve 2020/IMG_9013.jpg'),
+imagePath('images/gallery/Zimbabve 2020/IMG_9168.jpg'),
+imagePath('images/gallery/Zimbabve 2020/IMG_9282.jpg'),
+  ]),
+...createPhotos('Камчатка, 2011', [
+    imagePath('images/gallery/Kamchatka/DSC04721.JPG'),
+    imagePath('images/gallery/Kamchatka/DSCF1096.JPG'),
+    imagePath('images/gallery/Kamchatka/DSCF1148.JPG'),
+    imagePath('images/gallery/Kamchatka/DSCF1278.JPG'),
+    imagePath('images/gallery/Kamchatka/DSCF1345.JPG'),
+    imagePath('images/gallery/Kamchatka/DSCF1447.JPG'),
+  ]),
+...createPhotos('Приполярный Урал, 2020', [
+    imagePath('images/gallery/Pripiliar/IMG-20200726-WA0029.jpg'),
+    imagePath('images/gallery/Pripiliar/IMG-20200726-WA0031.jpg'),
+    imagePath('images/gallery/Pripiliar/IMG-20200726-WA0058.jpg'),
+    imagePath('images/gallery/Pripiliar/IMG_20200717_231719.jpg'),
+  ]),
+...createPhotos('Якутия, 2008', [
+    imagePath('images/gallery/Iakutia/P9160157.JPG'),
+    imagePath('images/gallery/Iakutia/P9170211.JPG'),
+    imagePath('images/gallery/Iakutia/P9170221.JPG'),
+    imagePath('images/gallery/Iakutia/P9210450.JPG'),
   ]),
   ...createPhotos('Конференции', [
     imagePath('images/gallery/Konferenz/IMG_6597.jpeg'),

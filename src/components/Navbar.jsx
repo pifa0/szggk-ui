@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { NavLink, Link } from 'react-router-dom'
 import { Menu, X, Phone } from 'lucide-react'
-import { setTranslateCookie, initGoogleTranslate } from '../googleTranslate'
+import { applyLanguage, getSavedLanguage } from '../googleTranslate'
 import { imagePath } from '../utils/paths'
 
 const navLinks = [
@@ -28,28 +28,30 @@ const LANGUAGE_OPTIONS = [
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
-  const [lang, setLang] = useState(() => {
-    return localStorage.getItem('site-language') || 'ru'
-  })
+  const [lang, setLang] = useState(() => getSavedLanguage())
   const [isChangingLang, setIsChangingLang] = useState(false)
+  const langRequestId = useRef(0)
 
-  const handleLanguageChange = useCallback((code) => {
-    if (code === lang || isChangingLang) return
+  const handleLanguageChange = useCallback(async (code) => {
+    if (isChangingLang) return
+    if (code === lang && code !== 'ru') return
 
     console.log('🌐 Changing language to:', code)
     setIsChangingLang(true)
+    const requestId = ++langRequestId.current
 
-    // Сохраняем язык
     setLang(code)
-    localStorage.setItem('site-language', code)
 
-    // Устанавливаем куку
-    setTranslateCookie(code === 'ru' ? 'ru' : code)
-
-    // Перезагружаем страницу
-    setTimeout(() => {
-      window.location.reload()
-    }, 200)
+    try {
+      await applyLanguage(code, {
+        forceReload: true,
+        forceReloadOnSource: true,
+      })
+    } finally {
+      if (langRequestId.current === requestId) {
+        setIsChangingLang(false)
+      }
+    }
   }, [lang, isChangingLang])
 
   useEffect(() => {

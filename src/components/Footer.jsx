@@ -106,7 +106,7 @@ export default function Footer() {
               <Phone size={14} color="#d4a017" /> +7 (921) 973-22-36
             </a>
             <a href="mailto:szggk@yandex.ru" style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--text-secondary)', textDecoration: 'none', fontSize: 13, marginBottom: 12 }}>
-              <Mail size={14} color="#d4a017" /> szggk@yandex.ru
+              <Mail size={14} color="#d4a017" /> geocomplex@szggk.ru
             </a>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, color: 'var(--text-secondary)', fontSize: 13 }}>
               <MapPin size={14} color="#d4a017" style={{ marginTop: 2, flexShrink: 0 }} /> Санкт-Петербург, Россия
