@@ -37,9 +37,10 @@ export default function Footer() {
                 width: 42, height: 42,
                 borderRadius: 9,
                 overflow: 'hidden',
-                border: '1px solid rgba(212,160,23,0.25)',
+                border: 'none',
+                outline: 'none'
               }}>
-                <img src={imagePath('favicon.svg')} alt="СЗГГК" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={imagePath('favicon.svg')} alt="СЗГГК" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
               </div>
               <div>
                 <div style={{ fontFamily: 'Russo One', fontSize: 15, color: 'var(--text-primary)' }}>ГЕОКОМПЛЕКС</div>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { NavLink, Link } from 'react-router-dom'
 import { Menu, X, Phone } from 'lucide-react'
-import { applyTranslateLanguage, onTranslateReady } from '../googleTranslate'
+import { setTranslateCookie, initGoogleTranslate } from '../googleTranslate'
 import { imagePath } from '../utils/paths'
 
 const navLinks = [
@@ -28,55 +28,34 @@ const LANGUAGE_OPTIONS = [
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
-  const [lang, setLang] = useState(() => localStorage.getItem('site-language') || 'ru')
+  const [lang, setLang] = useState(() => {
+    return localStorage.getItem('site-language') || 'ru'
+  })
+  const [isChangingLang, setIsChangingLang] = useState(false)
 
-  const tryApplyLanguage = useCallback((code) => applyTranslateLanguage(code), [])
+  const handleLanguageChange = useCallback((code) => {
+    if (code === lang || isChangingLang) return
 
-  const handleLanguageChange = useCallback(
-    (code) => {
-      setLang(code)
-      localStorage.setItem('site-language', code)
+    console.log('🌐 Changing language to:', code)
+    setIsChangingLang(true)
 
-      // Try immediate widget control
-      const success = tryApplyLanguage(code)
+    // Сохраняем язык
+    setLang(code)
+    localStorage.setItem('site-language', code)
 
-      // На GitHub Pages иногда нужна перезагрузка
-      const isGitHubPages = window.location.hostname.includes('github.io')
-      if (!success && isGitHubPages) {
-        // Перезагружаем страницу после установки куки
-        setTimeout(() => {
-          window.location.reload()
-        }, 150)
-      } else if (!success) {
-        // Для локальной разработки
-        window.setTimeout(() => {
-          window.location.reload()
-        }, 150)
-      }
-    },
-    [tryApplyLanguage]
-  )
+    // Устанавливаем куку
+    setTranslateCookie(code === 'ru' ? 'ru' : code)
+
+    // Перезагружаем страницу
+    setTimeout(() => {
+      window.location.reload()
+    }, 200)
+  }, [lang, isChangingLang])
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 50)
     window.addEventListener('scroll', handler)
     return () => window.removeEventListener('scroll', handler)
-  }, [])
-
-  // Apply saved language as soon as the Google widget injects its combo
-  useEffect(() => {
-    const stored = localStorage.getItem('site-language') || 'ru'
-    setLang(stored)
-
-    // Добавляем небольшую задержку для GitHub Pages
-    const timeoutId = setTimeout(() => {
-      const cancel = onTranslateReady(() => {
-        applyTranslateLanguage(stored)
-      })
-      return cancel
-    }, 500)
-
-    return () => clearTimeout(timeoutId)
   }, [])
 
   const selectStyle = {
@@ -169,6 +148,7 @@ export default function Navbar() {
             aria-label="Language"
             className="nav-language"
             style={selectStyle}
+            disabled={isChangingLang}
           >
             {LANGUAGE_OPTIONS.map((opt) => (
               <option key={opt.code} value={opt.code}>{opt.label}</option>
@@ -226,14 +206,6 @@ export default function Navbar() {
               width: 'fit-content',
               cursor: 'pointer',
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'linear-gradient(135deg, #e8c040, #d4a017)';
-              e.currentTarget.style.transform = 'translateY(-2px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'linear-gradient(135deg, #f5d060, #e0b430)';
-              e.currentTarget.style.transform = 'translateY(0)';
-            }}
           >
             <Phone size={16} color="#2c2c2c" /> +7 (921) 973-22-36
           </a>
@@ -247,6 +219,7 @@ export default function Navbar() {
                 ...selectStyle,
                 maxWidth: '100%',
               }}
+              disabled={isChangingLang}
             >
               {LANGUAGE_OPTIONS.map((opt) => (
                 <option key={opt.code} value={opt.code}>{opt.label}</option>

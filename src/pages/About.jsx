@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle2, ArrowRight, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { imagePath } from '../utils/paths'
@@ -20,7 +20,7 @@ const timeline = [
   { year: 'Сегодня', event: 'Более 40 контрактов, 100 000+ пг.км геофизической и геохимической съёмки, подтверждено более 150 млн тонн запасов руд ТПИ.' },
 ];
 
-// Массив сертификатов (замените на свои реальные изображения)
+// Массив сертификатов
 const certificates = [
   { id: 1, src: imagePath('images/certificate/certificate1.png'), alt: 'Сертификат 1' },
   { id: 2, src: imagePath('images/certificate/certificate2.png'), alt: 'Сертификат 2' },
@@ -40,7 +40,7 @@ const certificates = [
 
 // Компонент карусели сертификатов
 function CertificateCarousel() {
-  const [centerIndex, setCenterIndex] = useState(2); // Индекс центрального сертификата
+  const [centerIndex, setCenterIndex] = useState(2);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
 
@@ -57,10 +57,8 @@ function CertificateCarousel() {
     setIsModalOpen(true);
   };
 
-  // Вычисляем позиции элементов для кругового эффекта
   const getItemStyle = (index) => {
     let position = index - centerIndex;
-    // Нормализуем позицию для циклического отображения
     if (position > certificates.length / 2) position -= certificates.length;
     if (position < -certificates.length / 2) position += certificates.length;
 
@@ -73,21 +71,18 @@ function CertificateCarousel() {
     let blur = '0px';
 
     if (absPosition === 0) {
-      // Центральный элемент (самый большой)
       scale = 1.4;
       zIndex = 30;
       translateX = 0;
       translateY = 0;
       blur = '0px';
     } else if (absPosition === 1) {
-      // Ближайшие к центру (умеренно уменьшенные)
       scale = 1.0;
       zIndex = 20;
       translateX = position * 140;
       translateY = 0;
       blur = '0px';
     } else if (absPosition === 2) {
-      // Дальние края (сильно уменьшенные и размытые)
       scale = 0.7;
       opacity = 0.5;
       zIndex = 5;
@@ -95,7 +90,6 @@ function CertificateCarousel() {
       translateY = 10;
       blur = '2px';
     } else {
-      // Скрытые элементы (за пределами видимой области)
       scale = 0;
       opacity = 0;
       zIndex = 0;
@@ -121,7 +115,6 @@ function CertificateCarousel() {
       </div>
 
       <div style={{ position: 'relative', maxWidth: 1200, margin: '0 auto', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 480 }}>
-        {/* Левая стрелка */}
         <button
           onClick={handlePrev}
           style={{
@@ -146,7 +139,6 @@ function CertificateCarousel() {
           <ChevronLeft size={24} color="var(--text-primary)" />
         </button>
 
-        {/* Контейнер с сертификатами */}
         <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', height: 400 }}>
           {certificates.map((cert, idx) => {
             const style = getItemStyle(idx);
@@ -182,7 +174,6 @@ function CertificateCarousel() {
           })}
         </div>
 
-        {/* Правая стрелка */}
         <button
           onClick={handleNext}
           style={{
@@ -208,7 +199,6 @@ function CertificateCarousel() {
         </button>
       </div>
 
-      {/* Модальное окно для увеличенного просмотра */}
       {isModalOpen && selectedImage && (
         <div
           style={{
@@ -265,6 +255,17 @@ function CertificateCarousel() {
 }
 
 export default function About() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   return (
     <div style={{ paddingTop: 72 }}>
       {/* Page header */}
@@ -286,7 +287,6 @@ export default function About() {
             gap: 48,
             flexWrap: 'wrap',
           }}>
-            {/* Левая часть с текстом */}
             <div style={{ flex: 1, minWidth: 280 }}>
               <div className="section-label">О компании</div>
               <h1 className="section-title" style={{ maxWidth: 600 }}>
@@ -298,7 +298,6 @@ export default function About() {
               </p>
             </div>
 
-            {/* Правая часть с фото */}
             <div style={{
               flex: 0.8,
               minWidth: 280,
@@ -325,6 +324,7 @@ export default function About() {
           </div>
         </div>
       </section>
+
       {/* Main description */}
       <section className="section" style={{ background: 'var(--bg-primary)' }}>
         <div className="container">
@@ -353,9 +353,15 @@ export default function About() {
                 borderRadius: 20,
                 padding: 32,
                 marginTop: 80,
-                maxHeight: 350
               }}>
-                <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: 2, textTransform: 'uppercase', color: '#0891b2', marginBottom: 24 }}>
+                <div style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  letterSpacing: 2,
+                  textTransform: 'uppercase',
+                  color: '#0891b2',
+                  marginBottom: 24
+                }}>
                   Ключевые показатели
                 </div>
                 {[
@@ -364,13 +370,31 @@ export default function About() {
                   ['150+', 'миллионов тонн подтверждённых запасов руд чёрных и цветных металлов'],
                   ['25+', 'лет опыта у ведущих специалистов компании'],
                 ].map(([val, label], i) => (
-                  <div key={i} style={{ display: 'flex', gap: 14, paddingBottom: 15, marginBottom: 15, borderBottom: i < 3 ? '1px solid rgba(0,0,0,0.06)' : 'none' }}>
-                    <div style={{ fontFamily: 'Russo One', fontSize: 22, color: '#d4a017', minWidth: 100, flexShrink: 0 }}>{val}</div>
-                    <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>{label}</div>
+                  <div key={i} style={{
+                    display: 'flex',
+                    gap: 14,
+                    paddingBottom: i < 3 ? 15 : 0,  // У последнего элемента убираем нижний отступ
+                    marginBottom: i < 3 ? 15 : 0,   // У последнего элемента убираем нижний отступ
+                    borderBottom: i < 3 ? '1px solid rgba(0,0,0,0.06)' : 'none',
+                  }}>
+                    <div style={{
+                      fontFamily: 'Russo One',
+                      fontSize: 22,
+                      color: '#d4a017',
+                      minWidth: 100,
+                      flexShrink: 0
+                    }}>{val}</div>
+                    <div style={{
+                      fontSize: 13,
+                      color: 'var(--text-secondary)',
+                      lineHeight: 1.6,
+                    }}>{label}</div>
                   </div>
                 ))}
               </div>
             </div>
+
+
           </div>
         </div>
       </section>
@@ -408,11 +432,9 @@ export default function About() {
             <div className="accent-line" />
           </div>
           <div style={{ position: 'relative' }}>
-            {/* Vertical timeline line */}
             <div style={{ position: 'absolute', left: 50, top: 8, bottom: 0, width: 2, background: 'linear-gradient(to bottom, rgba(212,160,23,0.5), rgba(8,145,178,0.15))', borderRadius: 1, pointerEvents: 'none' }} />
             {timeline.map((t, i) => (
               <div key={i} style={{ marginBottom: 28 }}>
-                {/* Верхняя строка с точкой и годом */}
                 <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12, marginLeft: 34 }}>
                   <div style={{ position: 'relative', width: 34, flexShrink: 0, display: 'flex', justifyContent: 'center' }}>
                     <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#d4a017', border: '2px solid #080c14', zIndex: 1 }} />
@@ -426,9 +448,7 @@ export default function About() {
                     {t.year}
                   </div>
                 </div>
-
-                {/* Блок с текстом - со сдвигом */}
-                <div style={{ marginLeft: 125 }}>  {/* ← отступ от точки (34 + 40) */}
+                <div style={{ marginLeft: 125 }}>
                   <div style={{
                     background: 'var(--bg-card)',
                     border: '1px solid var(--border)',

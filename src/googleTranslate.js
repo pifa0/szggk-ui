@@ -1,148 +1,82 @@
 const SOURCE_LANG = 'ru'
 
-function setGoogTransCookie(target) {
-  const value = `/${SOURCE_LANG}/${target || SOURCE_LANG}`
-
-  // Определяем правильный путь для куки
-  const isGitHubPages = window.location.hostname.includes('github.io')
-  const cookiePath = isGitHubPages ? '/szggk-ui' : '/'
-
-  // Устанавливаем куки с правильным путем
-  document.cookie = `googtrans=${value};path=${cookiePath};SameSite=Lax`
-
-  // Также устанавливаем для корневого пути на всякий случай
-  if (isGitHubPages) {
-    document.cookie = `googtrans=${value};path=/;SameSite=Lax`
+// Определяем базовый путь приложения
+function getBasePath() {
+  const path = window.location.pathname
+  if (path.includes('/szggk-ui/')) {
+    return '/szggk-ui'
   }
+  return ''
 }
 
-/** Drive hidden Google Translate widget; returns true if applied. */
-export function applyTranslateLanguage(code) {
-  const target = code === SOURCE_LANG ? '' : code
+// Установка куки для перевода
+export function setTranslateCookie(targetLang) {
+  const target = targetLang || SOURCE_LANG
+  const value = `/${SOURCE_LANG}/${target}`
+  const basePath = getBasePath()
 
-  // Пытаемся найти выпадающий список Google Translate
-  let combo = document.querySelector('.goog-te-combo')
-
-  // Если не нашли, пробуем найти в iframe (для GitHub Pages)
-  if (!combo) {
-    const iframe = document.querySelector('.goog-te-menu-frame')
-    if (iframe && iframe.contentDocument) {
-      combo = iframe.contentDocument.querySelector('.goog-te-combo')
-    }
+  // Устанавливаем куки
+  document.cookie = `googtrans=${value}; path=/; max-age=86400; SameSite=Lax`
+  if (basePath) {
+    document.cookie = `googtrans=${value}; path=${basePath}; max-age=86400; SameSite=Lax`
   }
 
-  // Если все еще не нашли, пробуем альтернативные селекторы
-  if (!combo) {
-    combo = document.querySelector('select.goog-te-combo')
-  }
-
-  // Всегда устанавливаем cookie
-  try {
-    if (typeof document !== 'undefined') {
-      setGoogTransCookie(target)
-    }
-  } catch (e) {
-    console.warn('Cookie error:', e)
-  }
-
-  if (!combo) {
-    console.warn('Google Translate combo not found, reloading page...')
-    // На GitHub Pages иногда нужно перезагрузить страницу
-    if (window.location.hostname.includes('github.io')) {
-      setTimeout(() => {
-        window.location.reload()
-      }, 100)
-    }
-    return false
-  }
-
-  // Перебираем опции и выбираем нужный язык
-  const options = Array.from(combo.options)
-  let foundIndex = -1
-
-  for (let i = 0; i < options.length; i++) {
-    const opt = options[i]
-    if (!target && (opt.value === '' || opt.value === SOURCE_LANG)) {
-      foundIndex = i
-      break
-    }
-    if (opt.value === target || opt.value === `${SOURCE_LANG}|${target}`) {
-      foundIndex = i
-      break
-    }
-    if (opt.value.endsWith(`|${target}`)) {
-      foundIndex = i
-      break
-    }
-  }
-
-  if (foundIndex >= 0) {
-    combo.selectedIndex = foundIndex
-  } else if (target) {
-    combo.value = target
-  }
-
-  // Триггерим событие изменения
-  combo.dispatchEvent(new Event('change', { bubbles: true }))
-  combo.dispatchEvent(new Event('input', { bubbles: true }))
-
-  // Скрываем плашку после смены языка
-  setTimeout(() => {
-    const banner = document.querySelector('.goog-te-banner-frame')
-    if (banner) {
-      banner.style.display = 'none'
-    }
-    document.body.style.top = '0px'
-  }, 100)
-
-  return true
+  console.log('🍪 Cookie set:', value)
 }
 
-/**
- * Run callback once the Google combo exists (widget finished rendering).
- */
-export function onTranslateReady(callback, { timeoutMs = 20000 } = {}) {
-  if (typeof document === 'undefined') return () => {}
+// Инициализация Google Translate
+export function initGoogleTranslate() {
+  if (typeof window === 'undefined') return
+  if (document.getElementById('google-translate-script')) return
 
-  const checkCombo = () => {
-    // Проверяем combo в основном документе
-    let combo = document.querySelector('.goog-te-combo')
+  console.log('🌐 Init Google Translate')
 
-    // Если не нашли, проверяем в iframe
-    if (!combo) {
-      const iframe = document.querySelector('.goog-te-menu-frame')
-      if (iframe && iframe.contentDocument) {
-        combo = iframe.contentDocument.querySelector('.goog-te-combo')
+  window.googleTranslateElementInit = () => {
+    console.log('🌐 Google Translate callback')
+
+    if (!window.google?.translate?.TranslateElement) {
+      console.warn('⚠️ Google Translate API not loaded')
+      return
+    }
+
+    new window.google.translate.TranslateElement(
+      {
+        pageLanguage: SOURCE_LANG,
+        includedLanguages: 'en,fr,pt,de,es,zh-CN',
+        layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE,
+        autoDisplay: true  // Включаем автоотображение
+      },
+      'google_translate_element'
+    )
+
+    // Скрываем баннер
+    const hideBanner = () => {
+      const style = document.createElement('style')
+      style.id = 'gt-hide-style'
+      style.textContent = `
+        .goog-te-banner-frame { display: none !important; }
+        body { top: 0 !important; }
+        .goog-logo-link { display: none !important; }
+        .goog-te-gadget { color: transparent !important; }
+        .goog-te-gadget .goog-te-combo { color: #000 !important; }
+        #google_translate_element { display: none; }
+      `
+      if (!document.getElementById('gt-hide-style')) {
+        document.head.appendChild(style)
       }
+      document.body.style.top = '0px'
     }
 
-    if (combo) {
-      callback()
-      return true
-    }
-    return false
+    setTimeout(hideBanner, 100)
+    setTimeout(hideBanner, 500)
+    setTimeout(hideBanner, 1000)
+
+    window.dispatchEvent(new CustomEvent('googleTranslateReady'))
   }
 
-  if (checkCombo()) return () => {}
-
-  let finished = false
-  const finish = () => {
-    if (finished) return
-    if (!document.querySelector('.goog-te-combo')) return
-    finished = true
-    cleanup()
-    callback()
-  }
-
-  const observer = new MutationObserver(finish)
-  observer.observe(document.body, { childList: true, subtree: true })
-
-  const timer = setTimeout(cleanup, timeoutMs)
-
-  function cleanup() {
-    observer.disconnect()
-    clearTimeout(timer)
-  }
-
-  return cleanup
+  const script = document.createElement('script')
+  script.id = 'google-translate-script'
+  script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit'
+  script.async = true
+  document.head.appendChild(script)
 }
