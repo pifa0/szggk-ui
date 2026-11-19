@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react'
 import { YMaps, Map, Placemark } from '@mr-igorinni/react-yandex-maps-fork'
-import { ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, X, ArrowDown } from 'lucide-react'
 import { imagePath } from '../utils/paths'
 
 const locations = [
@@ -411,7 +411,27 @@ const typeInfo = {
     space: { label: 'Космодешифрирование', color: '#5A67D8' },
 }
 
+/* ------------------------------------------------------------------ */
+/* Константы                                                           */
+/* ------------------------------------------------------------------ */
+
 const MAP_DOT_PX = 22
+const MOBILE_BREAKPOINT = 768
+const NAVBAR_OFFSET = 96 // отступ при скролле к карточке, чтобы её не перекрывала шапка
+const FLASH_DURATION_MS = 1800
+
+const YMAPS_QUERY = { apikey: 'efa5101e-4f2c-4cb8-8d5d-9a76e045c6ec', lang: 'ru_RU' }
+const MAP_OPTIONS = { minZoom: 1.5, maxZoom: 19 }
+const MAP_CENTER = [35, 40]
+
+const POPUP_SIZE = {
+    mobile: { width: 280, height: 190 },
+    desktop: { width: 360, height: 185 },
+}
+
+const FILTER_TYPES = Object.entries(typeInfo).filter(([key]) => key !== 'office')
+
+const getMarkerColor = (loc) => typeInfo[loc.type]?.color || loc.color
 
 function mapPlacemarkIconOptions(color) {
     const s = MAP_DOT_PX
@@ -430,16 +450,40 @@ function mapPlacemarkIconOptions(color) {
         iconImageHref: href,
         iconImageSize: [s, s],
         iconImageOffset: [-c, -c],
+        cursor: 'pointer',
+        hasBalloon: false,
     }
 }
 
-// Хук для отслеживания клика вне элемента
+// Цвета точек не зависят от состояния, поэтому опции считаем один раз на модуль.
+// Стабильные ссылки важны: иначе при каждом ререндере карта переприменяет опции к маркерам.
+const PLACEMARK_OPTIONS_BY_ID = Object.fromEntries(
+    locations.map((loc) => [loc.id, mapPlacemarkIconOptions(getMarkerColor(loc))])
+)
+
+/* ------------------------------------------------------------------ */
+/* Хуки                                                                */
+/* ------------------------------------------------------------------ */
+
+function useIsMobile() {
+    const [isMobile, setIsMobile] = useState(false)
+
+    useEffect(() => {
+        const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`)
+        const update = () => setIsMobile(mql.matches)
+        update()
+        mql.addEventListener('change', update)
+        return () => mql.removeEventListener('change', update)
+    }, [])
+
+    return isMobile
+}
+
+// Клик/тап вне элемента (handler должен быть стабильным — оберни в useCallback)
 function useClickOutside(ref, handler) {
     useEffect(() => {
         const listener = (event) => {
-            if (!ref.current || ref.current.contains(event.target)) {
-                return
-            }
+            if (!ref.current || ref.current.contains(event.target)) return
             handler(event)
         }
         document.addEventListener('mousedown', listener)
@@ -451,17 +495,135 @@ function useClickOutside(ref, handler) {
     }, [ref, handler])
 }
 
+// Нативный mouseleave на контейнере.
+// Яндекс.Карты перехватывают события внутри своих панелей, и синтетический React onMouseLeave
+// не всегда срабатывает, поэтому подписываемся напрямую на DOM-элемент.
+function useMouseLeave(ref, handler) {
+    useEffect(() => {
+        const node = ref.current
+        if (!node) return undefined
+        node.addEventListener('mouseleave', handler)
+        return () => node.removeEventListener('mouseleave', handler)
+    }, [ref, handler])
+}
+
+/* ------------------------------------------------------------------ */
+/* Компоненты карты                                                    */
+/* ------------------------------------------------------------------ */
+
+// Отдельный memo-компонент со стабильными пропсами: geometry и обработчики не пересоздаются
+// при каждом ховере. Раньше setHoveredLocation → ререндер → новые geometry/handlers →
+// react-yandex-maps переприменял их к маркеру прямо во время наведения, и mouseleave терялся.
+const MapPlacemark = memo(function MapPlacemark({ loc, options, onEnter, onLeave, onClick }) {
+    const geometry = useMemo(() => [loc.lat, loc.lng], [loc.lat, loc.lng])
+    const handleEnter = useCallback(() => onEnter(loc.id), [onEnter, loc.id])
+    const handleLeave = useCallback(() => onLeave(loc.id), [onLeave, loc.id])
+    const handleClick = useCallback(() => onClick(loc), [onClick, loc])
+
+    return (
+        <Placemark
+            geometry={geometry}
+            options={options}
+            onMouseEnter={handleEnter}
+            onMouseLeave={handleLeave}
+            onClick={handleClick}
+        />
+    )
+})
+
+function MapPopup({ loc, position, isMobile, onOpen }) {
+    const color = getMarkerColor(loc)
+
+    return (
+        <div
+            style={{
+                position: 'absolute',
+                top: position.top,
+                left: position.left,
+                zIndex: 20,
+                // На десктопе плашка не перехватывает курсор, чтобы клик попадал в точку.
+                // На мобильном в ней есть кнопка перехода, т.к. наведения там нет.
+                pointerEvents: isMobile ? 'auto' : 'none',
+                width: isMobile ? 'calc(100% - 24px)' : 'min(360px, calc(100% - 24px))',
+                maxWidth: isMobile ? 'calc(100% - 24px)' : 360,
+                background: 'rgba(255,255,255,0.98)',
+                border: '1px solid #e2e8f0',
+                borderRadius: 16,
+                boxShadow: '0 18px 32px -16px rgba(15,23,42,0.45)',
+                overflow: 'hidden',
+            }}
+        >
+            <div style={{ height: 4, background: color }} />
+            <div style={{ padding: isMobile ? 12 : 14 }}>
+                <div style={{ fontSize: isMobile ? 14 : 16, fontWeight: 700, lineHeight: 1.35, color: '#0f172a', marginBottom: 4, overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
+                    {loc.name}
+                </div>
+                <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600, marginBottom: 8, overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
+                    {loc.region}
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {loc.works?.slice(0, isMobile ? 3 : undefined).map((method) => (
+                        <span key={method} style={{
+                            background: `${color}12`,
+                            color,
+                            border: `1px solid ${color}33`,
+                            padding: '3px 8px',
+                            borderRadius: 999,
+                            fontSize: 10,
+                            fontWeight: 600,
+                            lineHeight: 1.2,
+                            overflowWrap: 'anywhere',
+                            wordBreak: 'break-word',
+                        }}>
+                            {method}
+                        </span>
+                    ))}
+                    {isMobile && loc.works?.length > 3 && (
+                        <span style={{ fontSize: 10, color: '#64748b' }}>
+                            +{loc.works.length - 3}
+                        </span>
+                    )}
+                </div>
+
+                {isMobile ? (
+                    <button
+                        type="button"
+                        onClick={() => onOpen(loc)}
+                        style={{
+                            marginTop: 10,
+                            width: '100%',
+                            padding: '8px 12px',
+                            border: 'none',
+                            borderRadius: 10,
+                            background: color,
+                            color: '#fff',
+                            fontSize: 12,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 6,
+                        }}
+                    >
+                        Перейти к описанию
+                        <ArrowDown size={14} strokeWidth={2} />
+                    </button>
+                ) : (
+                    <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color }}>
+                        <ArrowDown size={13} strokeWidth={2} />
+                        Нажмите на точку, чтобы перейти к описанию
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+}
+
 function ImageCarousel({ images, onImageClick }) {
     const [currentIndex, setCurrentIndex] = useState(0)
     const [isHovered, setIsHovered] = useState(false)
-    const [isMobile, setIsMobile] = useState(false)
-
-    useEffect(() => {
-        const checkMobile = () => setIsMobile(window.innerWidth <= 768)
-        checkMobile()
-        window.addEventListener('resize', checkMobile)
-        return () => window.removeEventListener('resize', checkMobile)
-    }, [])
+    const isMobile = useIsMobile()
 
     if (!images || images.length === 0) return null
 
@@ -565,25 +727,30 @@ function ImageModal({ images, currentIndex, onClose, onPrev, onNext }) {
     )
 }
 
-function ProjectCard({ loc, markerColor, onSelect, isSelected, onImageClick }) {
+const ProjectCard = memo(function ProjectCard({ loc, markerColor, onSelect, isSelected, isFlashing, onImageClick, registerCard }) {
+    const setRef = useCallback((el) => registerCard(loc.id, el), [registerCard, loc.id])
+
     return (
         <div
+            ref={setRef}
             style={{
                 background: 'white',
                 borderRadius: 20,
                 overflow: 'hidden',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                boxShadow: isFlashing
+                    ? `0 0 0 3px ${markerColor}55, 0 8px 24px rgba(0,0,0,0.08)`
+                    : '0 2px 8px rgba(0,0,0,0.04)',
                 border: `1px solid ${isSelected ? markerColor : '#edf2f7'}`,
                 transition: 'all 0.25s ease',
                 cursor: 'pointer',
                 height: 'fit-content',
+                scrollMarginTop: NAVBAR_OFFSET,
             }}
-            onClick={() => onSelect(loc)}
+            onClick={() => onSelect(loc.id)}
         >
             {loc.images && <ImageCarousel images={loc.images} onImageClick={onImageClick} />}
             <div style={{ padding: '16px 20px 20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                    {/* ИСПРАВЛЕНИЕ БАГА 1: добавлен flex-shrink: 0 чтобы точка не сжималась в овал */}
                     <div style={{ width: 10, height: 10, borderRadius: '50%', background: markerColor, flexShrink: 0 }} />
                     <span style={{ fontSize: 11, fontWeight: 600, color: markerColor, textTransform: 'uppercase', letterSpacing: 1 }}>
                         {loc.region}
@@ -611,61 +778,124 @@ function ProjectCard({ loc, markerColor, onSelect, isSelected, onImageClick }) {
             </div>
         </div>
     )
+})
+
+function ProjectColumn({ projects, selectedId, flashId, ...cardProps }) {
+    return (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 24 }}>
+            {projects.map(loc => (
+                <ProjectCard
+                    key={loc.id}
+                    loc={loc}
+                    markerColor={getMarkerColor(loc)}
+                    isSelected={selectedId === loc.id}
+                    isFlashing={flashId === loc.id}
+                    {...cardProps}
+                />
+            ))}
+        </div>
+    )
 }
 
 export default function Projects() {
-    const [selected, setSelected] = useState(null)
+    const isMobile = useIsMobile()
+
     const [filter, setFilter] = useState('all')
+    const [selectedId, setSelectedId] = useState(null)
+    const [flashId, setFlashId] = useState(null)
+    const [hoveredId, setHoveredId] = useState(null)
     const [modalGallery, setModalGallery] = useState({ images: [], index: 0 })
-    const [hoveredLocation, setHoveredLocation] = useState(null)
     const [mapInstance, setMapInstance] = useState(null)
     const [mapInfoPosition, setMapInfoPosition] = useState(null)
-    const [isMobile, setIsMobile] = useState(false)
 
     const mapContainerRef = useRef(null)
+    // Не Map: имя Map перекрыто импортом из react-yandex-maps
+    const cardRefs = useRef({})
+    const flashTimerRef = useRef(null)
 
-    const handleClickOutside = useCallback(() => {
-        setHoveredLocation(null)
-    }, [])
+    /* ----------------------------- данные ----------------------------- */
 
-    useClickOutside(mapContainerRef, handleClickOutside)
-
-    useEffect(() => {
-        const checkMobile = () => setIsMobile(window.innerWidth <= 768)
-        checkMobile()
-        window.addEventListener('resize', checkMobile)
-        return () => window.removeEventListener('resize', checkMobile)
-    }, [])
-
-    const filteredProjects = useMemo(() => {
-        return filter === 'all'
-            ? locations.filter(l => l.type !== 'office')
-            : locations.filter(l => l.type === filter && l.type !== 'office')
-    }, [filter])
-
-    const leftColumnProjects = useMemo(() => {
-        if (isMobile) return filteredProjects
-        return filteredProjects.filter((_, index) => index % 2 === 0)
-    }, [filteredProjects, isMobile])
-
-    const rightColumnProjects = useMemo(() => {
-        if (isMobile) return []
-        return filteredProjects.filter((_, index) => index % 2 === 1)
-    }, [filteredProjects, isMobile])
-
-    const filteredForMap = useMemo(() =>
-        filter === 'all' ? locations : locations.filter(l => l.type === filter),
+    const filteredProjects = useMemo(
+        () => locations.filter(l => l.type !== 'office' && (filter === 'all' || l.type === filter)),
         [filter]
     )
 
-    const placemarkIconOptionsById = useMemo(() => {
-        const m = {}
-        for (const loc of filteredForMap) {
-            const markerColor = typeInfo[loc.type]?.color || loc.color
-            m[loc.id] = mapPlacemarkIconOptions(markerColor)
+    const filteredForMap = useMemo(
+        () => (filter === 'all' ? locations : locations.filter(l => l.type === filter)),
+        [filter]
+    )
+
+    const leftColumnProjects = useMemo(
+        () => (isMobile ? filteredProjects : filteredProjects.filter((_, i) => i % 2 === 0)),
+        [filteredProjects, isMobile]
+    )
+
+    const rightColumnProjects = useMemo(
+        () => (isMobile ? [] : filteredProjects.filter((_, i) => i % 2 === 1)),
+        [filteredProjects, isMobile]
+    )
+
+    // Активная точка выводится из id и ТЕКУЩЕГО списка маркеров. Если точка исчезла с карты
+    // (например, сменили фильтр во время наведения), плашка пропадёт сама, а не «залипнет».
+    const activeLocation = useMemo(
+        () => filteredForMap.find(l => l.id === hoveredId) ?? null,
+        [filteredForMap, hoveredId]
+    )
+
+    const mapDefaultState = useMemo(
+        () => ({ center: MAP_CENTER, zoom: isMobile ? 1.5 : 2 }),
+        [isMobile]
+    )
+
+    /* ------------------------ ховер по точкам ------------------------- */
+
+    const handleMarkerEnter = useCallback((id) => setHoveredId(id), [])
+
+    // Сбрасываем только если уходим именно с этой точки: при быстром переходе A → B
+    // событие leave(A) может прийти после enter(B) и не должно гасить плашку B.
+    const handleMarkerLeave = useCallback((id) => {
+        setHoveredId(prev => (prev === id ? null : prev))
+    }, [])
+
+    const clearHover = useCallback(() => setHoveredId(null), [])
+
+    useMouseLeave(mapContainerRef, clearHover) // курсор ушёл с карты — плашку убираем
+    useClickOutside(mapContainerRef, clearHover) // тап/клик вне карты (в т.ч. на тач-устройствах)
+
+    /* ---------------- переход от точки к описанию проекта ---------------- */
+
+    const registerCard = useCallback((id, el) => {
+        if (el) cardRefs.current[id] = el
+        else delete cardRefs.current[id]
+    }, [])
+
+    const goToProject = useCallback((loc) => {
+        const card = cardRefs.current[loc.id]
+        if (!card) return
+
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        card.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' })
+
+        setSelectedId(loc.id)
+        setHoveredId(null)
+        setFlashId(loc.id)
+        clearTimeout(flashTimerRef.current)
+        flashTimerRef.current = setTimeout(() => setFlashId(null), FLASH_DURATION_MS)
+    }, [])
+
+    useEffect(() => () => clearTimeout(flashTimerRef.current), [])
+
+    const handleMarkerClick = useCallback((loc) => {
+        if (loc.type === 'office') return // у офиса нет карточки проекта
+        if (isMobile) {
+            // На таче нет наведения: первый тап показывает плашку, переход — по кнопке в ней
+            setHoveredId(loc.id)
+            return
         }
-        return m
-    }, [filteredForMap])
+        goToProject(loc)
+    }, [isMobile, goToProject])
+
+    /* ------------------------ галерея (модалка) ------------------------ */
 
     const handleImageClick = useCallback((images, index) => {
         setModalGallery({ images: images || [], index: index || 0 })
@@ -674,37 +904,36 @@ export default function Projects() {
     const showPrevModalImage = useCallback(() => {
         setModalGallery((prev) => {
             if (!prev.images || prev.images.length === 0) return prev
-            const nextIndex = (prev.index - 1 + prev.images.length) % prev.images.length
-            return { ...prev, index: nextIndex }
+            return { ...prev, index: (prev.index - 1 + prev.images.length) % prev.images.length }
         })
     }, [])
     const showNextModalImage = useCallback(() => {
         setModalGallery((prev) => {
             if (!prev.images || prev.images.length === 0) return prev
-            const nextIndex = (prev.index + 1) % prev.images.length
-            return { ...prev, index: nextIndex }
+            return { ...prev, index: (prev.index + 1) % prev.images.length }
         })
     }, [])
 
-    const mapActiveLocation = hoveredLocation || selected
+    /* ------------------- позиция плашки над точкой -------------------- */
 
     const updateMapInfoPosition = useCallback(() => {
-        if (!mapInstance || !mapActiveLocation) {
+        if (!mapInstance || !activeLocation) {
             setMapInfoPosition(null)
             return
         }
 
+        const id = activeLocation.id
+
         try {
             const projection = mapInstance.options.get('projection')
             const globalPixels = projection.toGlobalPixels(
-                [mapActiveLocation.lat, mapActiveLocation.lng],
+                [activeLocation.lat, activeLocation.lng],
                 mapInstance.getZoom()
             )
             const pagePixels = mapInstance.converter.globalToPage(globalPixels)
             const mapRect = mapInstance.container.getParentElement().getBoundingClientRect()
 
-            const cardWidth = isMobile ? 280 : 360
-            const cardHeight = isMobile ? 145 : 165
+            const { width: cardWidth, height: cardHeight } = isMobile ? POPUP_SIZE.mobile : POPUP_SIZE.desktop
             const offsetX = 10
             const offsetY = 12
 
@@ -718,15 +947,32 @@ export default function Projects() {
             if (top + cardHeight > mapRect.height - 10) top = mapRect.height - cardHeight - 10
             if (top < 10) top = 10
 
-            setMapInfoPosition({ left, top })
+            setMapInfoPosition({ id, left, top })
         } catch {
-            setMapInfoPosition({ left: 10, top: 10 })
+            setMapInfoPosition({ id, left: 10, top: 10 })
         }
-    }, [mapInstance, mapActiveLocation, isMobile])
+    }, [mapInstance, activeLocation, isMobile])
 
     useEffect(() => {
         updateMapInfoPosition()
     }, [updateMapInfoPosition])
+
+    // Рисуем плашку только когда позиция посчитана именно для этой точки,
+    // иначе на один кадр она мелькает на месте предыдущей.
+    const showPopup =
+        activeLocation &&
+        activeLocation.type !== 'office' &&
+        mapInfoPosition?.id === activeLocation.id
+
+    /* ------------------------------ рендер ------------------------------ */
+
+    const cardProps = {
+        selectedId,
+        flashId,
+        onSelect: setSelectedId,
+        onImageClick: handleImageClick,
+        registerCard,
+    }
 
     return (
         <div style={{ paddingTop: 72 }}>
@@ -772,7 +1018,7 @@ export default function Projects() {
                             cursor: 'pointer',
                             transition: 'all 0.2s ease',
                         }}>Все МПИ</button>
-                        {Object.entries(typeInfo).filter(([k]) => k !== 'office').map(([key, info]) => (
+                        {FILTER_TYPES.map(([key, info]) => (
                             <button key={key} onClick={() => setFilter(key)} style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -794,81 +1040,36 @@ export default function Projects() {
                         ))}
                     </div>
 
-                    {/* ИСПРАВЛЕНИЕ БАГА 2: добавлен реф на контейнер карты */}
                     <div
                         ref={mapContainerRef}
                         className="projects-map-shell"
                         style={{ height: isMobile ? 400 : 520, borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', marginBottom: 32, position: 'relative' }}
-                        onMouseLeave={() => setHoveredLocation(null)}
                     >
-                        {mapActiveLocation && mapInfoPosition && mapActiveLocation.type !== 'office' && (
-                            <div
-                                style={{
-                                    position: 'absolute',
-                                    top: mapInfoPosition.top,
-                                    left: mapInfoPosition.left,
-                                    zIndex: 20,
-                                    pointerEvents: 'none',
-                                    width: isMobile ? 'calc(100% - 24px)' : 'min(360px, calc(100% - 24px))',
-                                    maxWidth: isMobile ? 'calc(100% - 24px)' : 360,
-                                    background: 'rgba(255,255,255,0.98)',
-                                    border: '1px solid #e2e8f0',
-                                    borderRadius: 16,
-                                    boxShadow: '0 18px 32px -16px rgba(15,23,42,0.45)',
-                                    overflow: 'hidden',
-                                }}
-                            >
-                                <div style={{ height: 4, background: typeInfo[mapActiveLocation.type]?.color || mapActiveLocation.color }} />
-                                <div style={{ padding: isMobile ? 12 : 14 }}>
-                                    <div style={{ fontSize: isMobile ? 14 : 16, fontWeight: 700, lineHeight: 1.35, color: '#0f172a', marginBottom: 4, overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
-                                        {mapActiveLocation.name}
-                                    </div>
-                                    <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600, marginBottom: 8, overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
-                                        {mapActiveLocation.region}
-                                    </div>
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                                        {mapActiveLocation.works?.slice(0, isMobile ? 3 : undefined).map((method) => (
-                                            <span key={method} style={{
-                                                background: `${typeInfo[mapActiveLocation.type]?.color || mapActiveLocation.color}12`,
-                                                color: typeInfo[mapActiveLocation.type]?.color || mapActiveLocation.color,
-                                                border: `1px solid ${(typeInfo[mapActiveLocation.type]?.color || mapActiveLocation.color)}33`,
-                                                padding: '3px 8px',
-                                                borderRadius: 999,
-                                                fontSize: 10,
-                                                fontWeight: 600,
-                                                lineHeight: 1.2,
-                                                overflowWrap: 'anywhere',
-                                                wordBreak: 'break-word',
-                                            }}>
-                                                {method}
-                                            </span>
-                                        ))}
-                                        {isMobile && mapActiveLocation.works?.length > 3 && (
-                                            <span style={{ fontSize: 10, color: '#64748b' }}>
-                                                +{mapActiveLocation.works.length - 3}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
+                        {showPopup && (
+                            <MapPopup
+                                loc={activeLocation}
+                                position={mapInfoPosition}
+                                isMobile={isMobile}
+                                onOpen={goToProject}
+                            />
                         )}
-                        <YMaps query={{ apikey: 'efa5101e-4f2c-4cb8-8d5d-9a76e045c6ec', lang: 'ru_RU' }}>
+                        <YMaps query={YMAPS_QUERY}>
                             <Map
-                                defaultState={{ center: [35, 40], zoom: isMobile ? 1.5 : 2 }}
+                                defaultState={mapDefaultState}
                                 width="100%"
                                 height="100%"
-                                options={{ minZoom: 1.5, maxZoom: 19 }}
+                                options={MAP_OPTIONS}
                                 instanceRef={setMapInstance}
                                 onActionEnd={updateMapInfoPosition}
                             >
                                 {filteredForMap.map(loc => (
-                                    <Placemark
+                                    <MapPlacemark
                                         key={loc.id}
-                                        geometry={[loc.lat, loc.lng]}
-                                        onMouseEnter={() => setHoveredLocation(loc)}
-                                        onMouseLeave={() => setHoveredLocation(null)}
-                                        onClick={() => setSelected(loc)}
-                                        options={placemarkIconOptionsById[loc.id]}
+                                        loc={loc}
+                                        options={PLACEMARK_OPTIONS_BY_ID[loc.id]}
+                                        onEnter={handleMarkerEnter}
+                                        onLeave={handleMarkerLeave}
+                                        onClick={handleMarkerClick}
                                     />
                                 ))}
                             </Map>
@@ -878,37 +1079,9 @@ export default function Projects() {
                     <div>
                         <h3 style={{ fontFamily: 'Russo One', fontSize: isMobile ? 20 : 22, marginBottom: 20 }}>Детали проектов</h3>
                         <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 24, alignItems: 'flex-start' }}>
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 24 }}>
-                                {leftColumnProjects.map(loc => {
-                                    const markerColor = typeInfo[loc.type]?.color || loc.color
-                                    return (
-                                        <ProjectCard
-                                            key={loc.id}
-                                            loc={loc}
-                                            markerColor={markerColor}
-                                            onSelect={setSelected}
-                                            isSelected={selected?.id === loc.id}
-                                            onImageClick={handleImageClick}
-                                        />
-                                    )
-                                })}
-                            </div>
+                            <ProjectColumn projects={leftColumnProjects} {...cardProps} />
                             {!isMobile && rightColumnProjects.length > 0 && (
-                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 24 }}>
-                                    {rightColumnProjects.map(loc => {
-                                        const markerColor = typeInfo[loc.type]?.color || loc.color
-                                        return (
-                                            <ProjectCard
-                                                key={loc.id}
-                                                loc={loc}
-                                                markerColor={markerColor}
-                                                onSelect={setSelected}
-                                                isSelected={selected?.id === loc.id}
-                                                onImageClick={handleImageClick}
-                                            />
-                                        )
-                                    })}
-                                </div>
+                                <ProjectColumn projects={rightColumnProjects} {...cardProps} />
                             )}
                         </div>
                     </div>
